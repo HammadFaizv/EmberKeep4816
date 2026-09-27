@@ -41,6 +41,14 @@ export class LevelUpState extends BaseState {
                 if (stage.pendingLevelUps > 0) this.showOffer();
                 else this.game.states.pop();
             },
+            reroll: {
+                remaining: stage.rerolls,
+                onReroll: () => {
+                    stage.rerolls -= 1;
+                    this.unmount(this.ui);
+                    this.showOffer();
+                },
+            },
         }), 'overlay');
     }
 }

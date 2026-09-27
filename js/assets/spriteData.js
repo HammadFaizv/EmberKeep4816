@@ -505,13 +505,14 @@ const coin = {
     palette: { y: '#f5c542', Y: '#c9971a', w: '#fff2b0' },
     frames: [['..yy', '.yww', 'ywyy', 'ywyY', 'yyyY', 'yyYY', '.yYY', '..YY']],
 };
+// EXP gems draw at 1× (8–10 px), about a quarter the size of a coin (30 px).
 const expGem = (fill, light, dark) => ({
-    mirror: true, outline: '#0a1420', fit: 2.2,
+    mirror: true, outline: '#0a1420', fit: 1,
     palette: { c: fill, l: light, d: dark },
     frames: [['..l', '.ll', 'lcc', 'ccc', '.cd', '..d']],
 });
 const expLarge = {
-    mirror: true, outline: '#1a0a20', fit: 2.2,
+    mirror: true, outline: '#1a0a20', fit: 1,
     palette: { c: '#ff8af0', l: '#ffd6fa', d: '#b04aa0' },
     frames: [['...l', '..ll', '.lcc', 'lccc', 'cccc', '.ccd', '..dd', '...d']],
 };

@@ -13,6 +13,7 @@
 .card-subtitle { color: var(--muted); max-width: 720px; text-align: center; }
 .card-row { display: flex; gap: 26px; margin: 24px 0 16px; }
 .card-hint { color: var(--muted); font-size: 13px; }
+.card-reroll { margin-bottom: 10px; }
 
 .card {
     position: relative;

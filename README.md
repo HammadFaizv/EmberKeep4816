@@ -42,7 +42,8 @@ game.bus.debug = true;                            // log every event
 - **Spell combos:** elemental reactions such as Melt (fire on a frozen enemy), Shatter, Wildfire, Toxic Blast, Contagion and Conduct.
 - **Enemies:** Skeleton, Goblin, Bat, Snake (poisons on hit), Goblin Archer, Skeleton Knight (elite), Lava Imp.
 - **Bosses:** six bosses and minibosses on the finite-state-machine architecture. They have phases with scripted events (dialogue, adds, shockwaves, arena lava), per-phase immunity changes, telegraphs, radial bursts, spirals, charges and meteor rain. Minibosses **flee** at low HP. The Demon Lord fight has cinematic letterbox dialogue.
-- **Stage progression (temporary):** stage level and EXP reset every stage. Each level-up offers 3 data-driven cards, including **timed buffs** (Frenzy, War Cry, Sprint, Stone Skin), resistances, structures and fusions.
+- **Stage progression (temporary):** stage level and EXP reset every stage. Each level-up offers 3 data-driven cards, including **timed buffs** (Frenzy, War Cry, Sprint, Stone Skin), resistances, structures and fusions. Every run gets **2 rerolls** (button or R), shared between the stage-start spell choice and level-up cards (`progression.rerollsPerRun`).
+- **Waves:** most stages have 5 waves; the last two escalate. `GAME_CONFIG.spawnDensity` multiplies enemy counts and spawn rates on every stage (1.5× by default).
 - **Persistent progression:** gold and **souls**, a 30-node upgrade tree, the Spell Shop, the **Relic Merchant** (relics for souls and boss materials), pets with **active abilities**, progression items, **New Game+**, **key rebinding**, and a versioned localStorage save (v2) with migration.
 - **Art:** procedural pixel-art sprites (auto-outlined, with hit-flash and frozen tints), animated frames, seamlessly tiling ground textures per biome, and a stage asset preloader with a progress bar.
 

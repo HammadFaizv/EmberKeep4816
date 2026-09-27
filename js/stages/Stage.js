@@ -76,6 +76,7 @@ export class Stage {
         this.defeated = [];          // { id, kind, rewards } of bosses killed this attempt
         this.loot = [];              // persistent rewards collected this attempt (rare drops)
         this.pendingLevelUps = 0;
+        this.rerolls = GAME_CONFIG.progression.rerollsPerRun; // shared by spell choice and level-up cards
         this.activeBoss = null;
         this.stats = { kills: 0, goldCollected: 0, soulsCollected: 0, combos: 0 };
         this.subs = new Subscriptions(this.bus);
