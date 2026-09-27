@@ -2,9 +2,9 @@
  * ObjectPool — reuses short-lived objects (projectiles, particles, damage numbers)
  * to reduce garbage-collection spikes.
  *
- * TODO: Once projectile counts grow (bullet-hell boss patterns), route
- * Projectile creation in SpellEffects/BossAttacks through a pool. Pooled objects
- * must implement reset(...args) to reinitialise their state.
+ * Projectiles use it (Projectile.create / Projectile.release; the Stage
+ * releases dead ones during cleanup). Pooled objects must implement
+ * reset(...args) to reinitialise their state completely.
  */
 export class ObjectPool {
     constructor(factory, initialSize = 0) {

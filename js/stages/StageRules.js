@@ -24,9 +24,23 @@ export function resolveRules(typeDefaults = {}, overrides = {}) {
     return { ...BASE_RULES, ...typeDefaults, ...overrides };
 }
 
-export function resolveScaling(def) {
+/**
+ * Difficulty tier for a stage. New Game+ shifts every stage up
+ * `newGamePlus.tierStep` tiers per cycle; tiers beyond the table extrapolate
+ * from the last one so NG+3 keeps getting harder.
+ */
+export function resolveScaling(def, ngPlus = 0) {
     const tiers = GAME_CONFIG.difficultyTiers;
-    const tier = tiers[Math.min(def.difficulty ?? 1, tiers.length - 1)];
+    const { tierStep, overflowMult } = GAME_CONFIG.newGamePlus;
+    const index = (def.difficulty ?? 1) + ngPlus * tierStep;
+    const last = tiers.length - 1;
+    const tier = { ...tiers[Math.min(index, last)] };
+    const overflow = Math.max(0, index - last);
+    if (overflow > 0) {
+        const m = 1 + overflow * overflowMult;
+        for (const key of ['hpMult', 'damageMult', 'bossHpMult', 'bossDamageMult']) tier[key] *= m;
+        tier.countMult *= 1 + overflow * 0.1;
+    }
     return { ...tier, ...(def.scaling ?? {}) };
 }
 

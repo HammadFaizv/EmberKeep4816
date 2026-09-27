@@ -5,13 +5,13 @@
  * versioned: when the shape changes, bump SAVE_VERSION and add a migration step
  * to MIGRATIONS so old saves upgrade in place instead of being wiped.
  */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 /** Factory for a fresh profile. Keep every persistent field listed here. */
 export function createDefaultSave(defaults = {}) {
     return {
         version: SAVE_VERSION,
-        currencies: { gold: 0 },
+        currencies: { gold: 0, souls: 0 },
         completedStages: [],
         unlockedStages: [],
         defeatedBosses: [],
@@ -22,19 +22,30 @@ export function createDefaultSave(defaults = {}) {
         equippedPets: [],
         petSlots: 0,                // base slots; upgrades add on top (see PlayerProgression)
         progressionItems: {},       // { [itemId]: count }
+        relics: [],                 // owned relic ids (Relic Merchant)
+        openedGates: [],            // gates opened for good (item-consuming gates)
         unlockedFeatures: [],       // e.g. 'spellShop', 'pets'
-        story: { introSeen: false, visitedNpcs: [] },
+        story: { introSeen: false, visitedNpcs: [], cleared: false, ngPlus: 0 },
         stats: { deaths: 0, stagesPlayed: 0, highestStageLevel: 0 },
-        settings: { volume: 0.8, music: 0.6, showDamageNumbers: true },
+        settings: { volume: 0.8, music: 0.6, showDamageNumbers: true, keyBindings: {} },
     };
 }
 
 /**
  * Migration steps keyed by the version they upgrade FROM.
- * Example for a future v2 that adds souls:
- *   1: (data) => ({ ...data, version: 2, currencies: { ...data.currencies, souls: 0 } }),
+ * (deepFill below adds any remaining missing fields afterwards.)
  */
-const MIGRATIONS = {};
+const MIGRATIONS = {
+    // v2: Souls currency, relics, item-consuming gates, New Game+, key bindings.
+    1: (data) => ({
+        ...data,
+        version: 2,
+        currencies: { souls: 0, ...data.currencies },
+        relics: data.relics ?? [],
+        openedGates: data.openedGates ?? [],
+        story: { cleared: false, ngPlus: 0, ...data.story },
+    }),
+};
 
 /** Thin storage adapter so tests or a cloud backend can replace localStorage. */
 export class LocalStorageAdapter {

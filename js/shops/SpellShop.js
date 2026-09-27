@@ -15,6 +15,7 @@ export class SpellShop {
     constructor({ id = 'spell_shop', profile, costs, unlocks, bus }) {
         this.id = id;
         this.name = 'Witch\'s Spell Shop';
+        this.currencies = ['gold'];
         this.profile = profile;
         this.costs = costs;
         this.unlocks = unlocks;
@@ -24,7 +25,7 @@ export class SpellShop {
     /** Spells not yet owned. */
     getUnlockItems() {
         return Object.values(SPELLS)
-            .filter((def) => !this.profile.isSpellUnlocked(def.id))
+            .filter((def) => !def.fused && !def.hidden && !this.profile.isSpellUnlocked(def.id))
             .map((def) => new ShopItem({
                 id: `unlock:${def.id}`,
                 kind: 'unlockSpell',
@@ -57,6 +58,22 @@ export class SpellShop {
                 },
             });
         });
+    }
+
+    /** Generic shop interface consumed by ShopUI. */
+    getSections() {
+        return [
+            { title: 'Learn New Spells', items: this.getUnlockItems(), empty: 'You know every spell for sale.' },
+            { title: 'Upgrade Spells', items: this.getUpgradeItems(), empty: 'No spells to upgrade.' },
+        ];
+    }
+
+    /** Tags shown above the sections (the spells already known). */
+    getOwnedSummary() {
+        return {
+            label: 'Unlocked spells: ',
+            tags: this.profile.data.unlockedSpells.filter((id) => SPELLS[id]).map((id) => ({ text: SPELLS[id].name, element: SPELLS[id].element })),
+        };
     }
 
     canPurchase(item) {

@@ -1,22 +1,37 @@
 import { Events } from '../core/EventBus.js';
+import { Pickup } from '../entities/Pickup.js';
 
 /**
- * ExperienceSystem — converts kills into stage EXP.
+ * ExperienceSystem — converts kills into stage EXP through EXP orbs.
  *
  * Stage-scoped: created by the Stage, subscribed through the Stage's
- * Subscriptions so it disappears with the stage. EXP is awarded directly on
- * kill (no orbs) to keep DEFENSE stages, where the player cannot move, fair.
+ * Subscriptions so it disappears with the stage. Every kill drops orbs worth
+ * the enemy's `exp`; collecting an orb awards it (× the `expGain` stat).
+ * The stage rule `autoCollectPickups` makes orbs fly to the player, which
+ * keeps DEFENSE stages (no movement) fair.
  *
- * TODO: If EXP orbs are wanted in OPEN_FIELD stages, spawn Pickup entities of
- * kind 'exp' here instead of calling levels.addExp directly, and let the stage
- * rule `autoCollectPickups` decide whether they fly to the player.
+ * Big EXP values (bosses) are split into several orbs for a satisfying burst.
  */
+const MAX_ORB_VALUE = 25;
+
 export class ExperienceSystem {
-    constructor({ bus, subscriptions, levels, player }) {
+    constructor({ bus, subscriptions, levels, player, stage }) {
         this.bus = bus;
         this.levels = levels;
         this.player = player;
-        subscriptions.on(Events.ENEMY_KILLED, ({ enemy }) => this.award(enemy.exp));
+        this.stage = stage;
+        subscriptions
+            .on(Events.ENEMY_KILLED, ({ enemy }) => this.dropOrbs(enemy))
+            .on(Events.EXP_COLLECTED, ({ amount }) => this.award(amount));
+    }
+
+    dropOrbs(enemy) {
+        let remaining = enemy.exp ?? 0;
+        while (remaining > 0) {
+            const value = Math.min(MAX_ORB_VALUE, remaining);
+            remaining -= value;
+            this.stage.spawnPickup(new Pickup({ kind: 'exp', amount: value, x: enemy.pos.x, y: enemy.pos.y }));
+        }
     }
 
     award(baseAmount) {

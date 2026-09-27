@@ -5,10 +5,13 @@ import { applyOp } from '../utils/MathUtils.js';
  *
  *   final = (base + Σadd) × Πmul        ('set' modifiers override everything)
  *
- * Stat keys are open-ended strings, so `elementDamage.poison` works the moment
- * something grants it (unknown stats default to 0). Every modifier carries a
- * `source` ('upgrade:hp_1', 'card:focus', 'pet:fire_sprite') so it can be
- * inspected or removed.
+ * Stat keys are open-ended strings, so `elementDamage.poison` or `resist.ice`
+ * work the moment something grants them (unknown stats default to 0). Every
+ * modifier carries a `source` ('upgrade:hp_1', 'card:focus', 'pet:fire_sprite')
+ * so it can be inspected or removed.
+ *
+ * Timed modifiers (card buffs like "Frenzy") carry `remaining` seconds and
+ * expire through tick(dt), which the Player calls every update.
  */
 export class PlayerStats {
     constructor(baseStats = {}) {
@@ -22,14 +25,41 @@ export class PlayerStats {
         this._cache.clear();
     }
 
-    addModifier({ stat, op = 'add', value, source = 'unknown' }) {
-        this.modifiers.push({ stat, op, value, source });
+    addModifier({ stat, op = 'add', value, source = 'unknown', duration = null, label = null }) {
+        this.modifiers.push({ stat, op, value, source, remaining: duration, duration, label });
         this._cache.clear();
     }
 
     removeBySource(source) {
         this.modifiers = this.modifiers.filter((m) => m.source !== source);
         this._cache.clear();
+    }
+
+    /** Counts down timed modifiers. Returns the labels of buffs that just expired. */
+    tick(dt) {
+        let expired = null;
+        for (const m of this.modifiers) {
+            if (m.remaining === null) continue;
+            m.remaining -= dt;
+            if (m.remaining <= 0) (expired ??= []).push(m.label ?? m.source);
+        }
+        if (!expired) return null;
+        this.modifiers = this.modifiers.filter((m) => m.remaining === null || m.remaining > 0);
+        this._cache.clear();
+        return [...new Set(expired)];
+    }
+
+    /** Active timed buffs grouped by source, for the HUD. */
+    activeBuffs() {
+        const bySource = new Map();
+        for (const m of this.modifiers) {
+            if (m.remaining === null) continue;
+            const current = bySource.get(m.source);
+            if (!current || m.remaining > current.remaining) {
+                bySource.set(m.source, { source: m.source, label: m.label ?? m.source, remaining: m.remaining, duration: m.duration });
+            }
+        }
+        return [...bySource.values()];
     }
 
     get(stat) {
@@ -54,7 +84,7 @@ export class PlayerStats {
 
     clone() {
         const copy = new PlayerStats(this.base);
-        copy.modifiers = [...this.modifiers];
+        copy.modifiers = this.modifiers.map((m) => ({ ...m }));
         return copy;
     }
 }

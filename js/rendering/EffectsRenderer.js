@@ -1,6 +1,6 @@
 /**
  * EffectsRenderer — draws cosmetic Effect entities by `kind`
- * (ring, bolt, strike, text). Register painters for new effect kinds.
+ * (ring, bolt, strike, frost, text). Register painters for new effect kinds.
  */
 const TAU = Math.PI * 2;
 
@@ -67,6 +67,32 @@ const DEFAULT_PAINTERS = {
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.arc(e.pos.x, e.pos.y, e.data.radius * (0.5 + t * 0.5), 0, TAU);
+        ctx.stroke();
+    },
+
+    /** Glacial Nova: an expanding icy ring with crystal spikes. */
+    frost(ctx, e) {
+        const t = e.progress;
+        const pos = e.data.follow?.pos ?? e.pos;
+        const radius = e.data.radius * (0.25 + 0.75 * t);
+        ctx.globalAlpha = (1 - t) * 0.35;
+        ctx.fillStyle = '#bfeaff';
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, radius, 0, TAU);
+        ctx.fill();
+        ctx.globalAlpha = 1 - t;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        for (let i = 0; i < 12; i++) {
+            const a = (i / 12) * TAU;
+            ctx.moveTo(pos.x + Math.cos(a) * radius * 0.8, pos.y + Math.sin(a) * radius * 0.8);
+            ctx.lineTo(pos.x + Math.cos(a) * radius, pos.y + Math.sin(a) * radius);
+        }
+        ctx.stroke();
+        ctx.strokeStyle = e.data.color ?? '#8fd8ff';
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, radius, 0, TAU);
         ctx.stroke();
     },
 

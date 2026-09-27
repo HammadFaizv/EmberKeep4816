@@ -1,12 +1,15 @@
 /**
  * UIOverlayRenderer — screen-space canvas overlays drawn on top of a stage:
- * boss health bar, wave/phase banners, objective pointer, low-HP vignette.
+ * boss health bar, wave/phase banners, boss dialogue subtitles, cinematic
+ * letterbox bars (final boss), objective pointer, low-HP vignette.
  * (DOM-based HUD elements live in ui/StageUI.js.)
  */
 export class UIOverlayRenderer {
     constructor(renderer) {
         this.renderer = renderer;
         this.banner = null;
+        this.dialogue = null;
+        this.letterbox = { target: 0, amount: 0 };
     }
 
     /** Big centred text that fades out, e.g. "Wave 2" or "The Bone Warden awakens". */
@@ -14,10 +17,26 @@ export class UIOverlayRenderer {
         this.banner = { title, subtitle, duration, start: this.renderer.time };
     }
 
+    /** Speaker + line shown at the bottom of the screen (boss taunts, final boss dialogue). */
+    showDialogue(speaker, text, duration = 4) {
+        this.dialogue = { speaker, text, duration, start: this.renderer.time };
+    }
+
+    /** Cinematic bars; `on` animates them in, off animates them out. */
+    setLetterbox(on) { this.letterbox.target = on ? 1 : 0; }
+
+    reset() {
+        this.banner = null;
+        this.dialogue = null;
+        this.letterbox = { target: 0, amount: 0 };
+    }
+
     render(stage) {
         const { ctx, width, height, time } = this.renderer;
         this._vignette(ctx, stage, width, height);
+        this._letterbox(ctx, width, height);
         if (stage.activeBoss?.targetable) this._bossBar(ctx, stage.activeBoss, width);
+        this._dialogue(ctx, width, height, time);
         this._objectivePointer(ctx, stage, width, height);
         if (stage.status === 'won') this._drawBanner(ctx, width, height, 'STAGE CLEARED', '', 1);
         else if (this.banner) {
@@ -61,7 +80,7 @@ export class UIOverlayRenderer {
         ctx.font = 'bold 16px Georgia, serif';
         ctx.textAlign = 'center';
         ctx.fillText(`${boss.name} — ${boss.phase.name}`, width / 2, y - 10);
-        if (boss.immunities.length) {
+        if (boss.immunities?.length) {
             ctx.font = '12px Georgia, serif';
             ctx.fillStyle = '#b0b0b0';
             ctx.fillText(`Immune: ${boss.immunities.join(', ')}`, width / 2, y + 32);
@@ -86,6 +105,43 @@ export class UIOverlayRenderer {
         ctx.lineTo(-8, -10);
         ctx.lineTo(-8, 10);
         ctx.fill();
+        ctx.restore();
+    }
+
+    _letterbox(ctx, width, height) {
+        const lb = this.letterbox;
+        lb.amount += (lb.target - lb.amount) * 0.06;
+        if (lb.amount < 0.01) return;
+        const bar = 56 * lb.amount;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, width, bar);
+        ctx.fillRect(0, height - bar, width, bar);
+    }
+
+    _dialogue(ctx, width, height, time) {
+        const d = this.dialogue;
+        if (!d) return;
+        const t = (time - d.start) / d.duration;
+        if (t >= 1) {
+            this.dialogue = null;
+            return;
+        }
+        const alpha = Math.min(1, t * 6, (1 - t) * 5);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.textAlign = 'center';
+        const y = height - 118;
+        const w = Math.min(900, 60 + d.text.length * 10);
+        ctx.fillStyle = 'rgba(8, 4, 6, 0.8)';
+        ctx.fillRect((width - w) / 2, y - 34, w, 64);
+        ctx.strokeStyle = 'rgba(255, 120, 60, 0.6)';
+        ctx.strokeRect((width - w) / 2 + 0.5, y - 33.5, w - 1, 63);
+        ctx.font = 'bold 14px Georgia, serif';
+        ctx.fillStyle = '#ff9a5a';
+        ctx.fillText(d.speaker.toUpperCase(), width / 2, y - 12);
+        ctx.font = 'italic 19px Georgia, serif';
+        ctx.fillStyle = '#f3e3c3';
+        ctx.fillText(`“${d.text}”`, width / 2, y + 16);
         ctx.restore();
     }
 

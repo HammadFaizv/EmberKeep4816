@@ -15,6 +15,8 @@ export class StageResultUI extends UIComponent {
                     stat('Enemies slain', summary.kills),
                     stat('Gold collected', summary.gold),
                     stat('Time', formatTime(summary.time)),
+                    summary.souls ? stat('Souls', summary.souls) : null,
+                    summary.combos ? stat('Combos', summary.combos) : null,
                 ]),
                 summary.rewards.length ? el('div', { class: 'result-rewards' }, [
                     el('h3', {}, 'Rewards'),

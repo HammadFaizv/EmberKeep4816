@@ -12,6 +12,7 @@ export const VICTORY_TEXT = Object.freeze([
     'The Demon Lord\'s heart stops. The corruption loosens its grip on the land.',
     'Among the ashes you find thousands of tiny dolls — the souls who came before you, still waiting.',
     'Soul #4816 was the one who made it.',
-    // TODO: Post-game — a New Game+ flag in the save (story.cleared) could raise
-    // difficulty tiers and unlock a second map region.
+    // Post-game: story.cleared unlocks New Game+ (progression/NewGamePlus.js).
+    // TODO: A second map region for NG+ would be new MAP_NODES gated by a
+    // { type: 'ngPlus', level } ProgressionRequirement.
 ]);

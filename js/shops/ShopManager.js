@@ -2,9 +2,13 @@
  * ShopManager — registry of shops by id. Map nodes of type 'shop' reference a
  * shopId; the ShopState asks this manager for the shop to display.
  *
- * TODO: Future shops (a Relic Merchant selling boss-material crafts, a Pet
- * Treats vendor) are new classes following SpellShop's interface, registered
- * here in Game.js, plus a UI component.
+ * Shop interface (SpellShop, RelicShop):
+ *   id, name, currencies          header data
+ *   getSections()                 [{ title, items: ShopItem[], empty }]
+ *   getOwnedSummary()             optional { label, tags: [{ text, element }] }
+ *   canPurchase(item) / purchase(item)
+ * ShopUI renders any shop that follows it; a new shop is a class + a
+ * registration in Game.js + a map node with its shopId.
  */
 export class ShopManager {
     constructor() {

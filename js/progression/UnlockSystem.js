@@ -4,16 +4,18 @@ import { ProgressionRequirement } from './ProgressionRequirement.js';
 
 /**
  * UnlockSystem — owns every "is X unlocked" mutation in the persistent profile:
- * stages (through the WorldMap graph), features, spells, pets and NPC visits.
+ * stages (through the WorldMap graph), gates, features, spells, pets and NPC visits.
  *
- * refresh() re-evaluates the map graph and feature requirements after any
- * progression change and emits PATH_UNLOCKED / FEATURE_UNLOCKED for anything new.
+ * refresh() re-evaluates gates, feature requirements and the map graph after
+ * any progression change and emits GATE_OPENED / FEATURE_UNLOCKED /
+ * PATH_UNLOCKED for anything new.
  */
 export class UnlockSystem {
-    constructor({ profile, bus, worldMap }) {
+    constructor({ profile, bus, worldMap, items = null }) {
         this.profile = profile;
         this.bus = bus;
         this.worldMap = worldMap;
+        this.items = items; // needed to consume gate items
     }
 
     markStageCompleted(stageId) {
@@ -54,8 +56,23 @@ export class UnlockSystem {
 
     isFeatureUnlocked(id) { return this.profile.isFeatureUnlocked(id); }
 
-    /** Re-evaluates features and map paths. Call after any progression change. */
+    /**
+     * Opens item-consuming gates whose requirements are met: the items are
+     * removed and the gate is remembered as open for good.
+     */
+    openGates() {
+        for (const gate of this.worldMap.gates.values()) {
+            if (!gate.consumes || this.profile.isGateOpened(gate.id) || !gate.canOpen(this.profile)) continue;
+            const consumed = gate.consumedItems();
+            consumed.forEach(({ id, amount }) => this.items?.remove(id, amount));
+            this.profile.data.openedGates.push(gate.id);
+            this.bus.emit(Events.GATE_OPENED, { id: gate.id, name: gate.name, consumed });
+        }
+    }
+
+    /** Re-evaluates gates, features and map paths. Call after any progression change. */
     refresh() {
+        this.openGates();
         for (const [id, feature] of Object.entries(GAME_CONFIG.features)) {
             if (!this.isFeatureUnlocked(id) && ProgressionRequirement.checkAll(feature.requirements, this.profile)) {
                 this.unlockFeature(id);

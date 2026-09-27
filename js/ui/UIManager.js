@@ -3,6 +3,7 @@ import { el } from './dom.js';
 import { ITEMS } from '../config/itemConfig.js';
 import { SPELLS } from '../config/spellConfig.js';
 import { PETS } from '../config/petConfig.js';
+import { RELICS } from '../config/relicConfig.js';
 
 /**
  * UIManager — mounts DOM UI components into layers above the canvas and shows
@@ -53,5 +54,8 @@ export class UIManager {
         bus.on(Events.SPELL_UPGRADED, ({ id, level }) => this.toast(`${SPELLS[id]?.name ?? id} upgraded to Lv ${level}`, 'spell'));
         bus.on(Events.PET_UNLOCKED, ({ id }) => this.toast(`New companion: ${PETS[id]?.name ?? id}`, 'feature'));
         bus.on(Events.UPGRADE_PURCHASED, ({ node }) => this.toast(`Upgrade purchased: ${node.name}`, 'feature'));
+        bus.on(Events.RELIC_ACQUIRED, ({ id }) => this.toast(`Relic acquired: ${RELICS[id]?.name ?? id}`, 'item'));
+        bus.on(Events.GATE_OPENED, ({ name, consumed }) => this.toast(
+            `${name} opened${consumed.length ? ` (used ${consumed.map((c) => ITEMS[c.id]?.name ?? c.id).join(', ')})` : ''}`, 'path'));
     }
 }

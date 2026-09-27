@@ -64,6 +64,7 @@ export class Spell {
             elemental: this.getStat('elementalDamage') * damageMult * (1 + stats.elementBonus(this.element)),
             knockback: this.getStat('knockback'),
             statusEffects: this.def.statusEffects ?? [],
+            bonusVsStatus: this.def.bonusVsStatus,
             source: this,
         };
     }

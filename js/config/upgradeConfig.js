@@ -49,6 +49,9 @@ export const UPGRADES = Object.freeze([
     { id: 'lifesteal_1', name: 'Soul Siphon', category: 'vitality', position: { x: -3.5, y: 4 },
         description: 'Heal for 2% of damage dealt.', requires: ['regen_1', 'defense_2'], costs: gold(250),
         effects: [{ type: 'stat', stat: 'lifesteal', op: 'add', value: 0.02 }] },
+    { id: 'resist_1', name: 'Warded Stitching', category: 'vitality', position: { x: -2.5, y: 4 },
+        description: '+10% resistance to every element.', requires: ['defense_2'], costs: gold(180),
+        effects: [{ type: 'stat', stat: 'resist.all', op: 'add', value: 0.1 }] },
 
     // ---- Arcane branch ----------------------------------------------------
     { id: 'damage_1', name: 'Arcane Focus I', category: 'arcane', position: { x: -1, y: 1 },
@@ -70,8 +73,13 @@ export const UPGRADES = Object.freeze([
         description: '+1 spell slot.', requires: ['spell_slot_1'], costs: gold(400),
         effects: [{ type: 'stat', stat: 'spellSlots', op: 'add', value: 1 }] },
     { id: 'spell_combos', name: 'Spell Resonance', category: 'arcane', position: { x: -1.5, y: 4 },
-        description: 'Unlocks spell combos. (Coming soon)', requires: ['cdr_1', 'spell_slot_1'], costs: gold(500),
+        description: 'Unlocks spell combos: elemental reactions such as Melt (fire on frozen), Wildfire (wind on burning) and Shatter.',
+        requires: ['cdr_1', 'spell_slot_1'], costs: gold(500),
         effects: [{ type: 'unlockFeature', id: 'spellCombos' }] },
+    { id: 'spell_fusion', name: 'Soul Weaving', category: 'arcane', position: { x: -1.5, y: 5 },
+        description: 'Unlocks spell fusion: level-ups may offer to merge two equipped spells into a stronger one.',
+        requires: ['spell_combos'], costs: gold(650),
+        effects: [{ type: 'unlockFeature', id: 'spellFusion' }] },
 
     // ---- Elements branch --------------------------------------------------
     { id: 'fire_1', name: 'Fire Attunement', category: 'elements', position: { x: 1, y: 1 },
@@ -83,18 +91,24 @@ export const UPGRADES = Object.freeze([
     { id: 'wind_1', name: 'Wind Attunement', category: 'elements', position: { x: 2, y: 2 },
         description: '+10% Wind damage.', requires: ['fire_1'], costs: gold(60),
         effects: [{ type: 'stat', stat: 'elementDamage.wind', op: 'add', value: 0.1 }] },
+    { id: 'ice_1', name: 'Ice Attunement', category: 'elements', position: { x: 0.25, y: 2 },
+        description: '+10% Ice damage.', requires: ['fire_1'], costs: gold(60),
+        effects: [{ type: 'stat', stat: 'elementDamage.ice', op: 'add', value: 0.1 }] },
+    { id: 'poison_1', name: 'Poison Attunement', category: 'elements', position: { x: 0.5, y: 3 },
+        description: '+10% Poison damage.', requires: ['ice_1'], costs: gold(80),
+        effects: [{ type: 'stat', stat: 'elementDamage.poison', op: 'add', value: 0.1 }] },
     { id: 'elements_2', name: 'Elemental Mastery', category: 'elements', position: { x: 1.5, y: 3 },
         description: '+10% damage for every element.', requires: ['thunder_1', 'wind_1'], costs: gold(220),
-        effects: [
-            { type: 'stat', stat: 'elementDamage.fire', op: 'add', value: 0.1 },
-            { type: 'stat', stat: 'elementDamage.thunder', op: 'add', value: 0.1 },
-            { type: 'stat', stat: 'elementDamage.wind', op: 'add', value: 0.1 },
-        ] },
+        effects: ['fire', 'thunder', 'wind', 'ice', 'poison']
+            .map((element) => ({ type: 'stat', stat: `elementDamage.${element}`, op: 'add', value: 0.1 })) },
 
     // ---- Fortune branch ---------------------------------------------------
     { id: 'gold_1', name: 'Grave Robber I', category: 'fortune', position: { x: 3, y: 1 },
         description: '+3% gold drop chance.', requires: ['awakening'], costs: gold(35),
         effects: [{ type: 'stat', stat: 'goldDropChance', op: 'add', value: 0.03 }] },
+    { id: 'gold_value_1', name: 'Gilded Stitch', category: 'fortune', position: { x: 4, y: 1 },
+        description: 'Gold coins are worth 20% more.', requires: ['gold_1'], costs: gold(90),
+        effects: [{ type: 'stat', stat: 'goldValue', op: 'add', value: 0.2 }] },
     { id: 'gold_2', name: 'Grave Robber II', category: 'fortune', position: { x: 3, y: 2 },
         description: '+5% gold drop chance.', requires: ['gold_1'], costs: gold(110),
         effects: [{ type: 'stat', stat: 'goldDropChance', op: 'add', value: 0.05 }] },

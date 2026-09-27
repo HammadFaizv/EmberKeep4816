@@ -7,9 +7,8 @@
  */
 export const CURRENCIES = Object.freeze({
     gold: { id: 'gold', name: 'Gold', icon: '●', color: '#f5c542' },
-    // TODO: Souls — a second currency dropped by elites, spent on rebirth
-    // upgrades. Add it here; CurrencySystem/CostSystem/SaveManager handle it
-    // automatically (add a save migration to initialise the balance).
+    // Souls drop from elites, minibosses and bosses; spent at the Relic Merchant.
+    souls: { id: 'souls', name: 'Souls', icon: '✦', color: '#b89cff' },
 });
 
 export const ITEMS = Object.freeze({
@@ -30,6 +29,30 @@ export const ITEMS = Object.freeze({
         name: 'Bone Crystal',
         category: 'bossMaterial',
         description: 'Dropped by the Bone Warden. Some spells require it to be unlocked.',
+    },
+    chieftain_tusk: {
+        id: 'chieftain_tusk',
+        name: 'Chieftain\'s Tusk',
+        category: 'bossMaterial',
+        description: 'Dropped by the Goblin Chieftain. Relic Merchants prize it.',
+    },
+    rot_gland: {
+        id: 'rot_gland',
+        name: 'Rot Gland',
+        category: 'bossMaterial',
+        description: 'Dropped by the Rot Mother. Still oozing.',
+    },
+    iron_heart: {
+        id: 'iron_heart',
+        name: 'Iron Heart',
+        category: 'bossMaterial',
+        description: 'The core of the Iron Revenant. Heavy and cold.',
+    },
+    reaper_shard: {
+        id: 'reaper_shard',
+        name: 'Reaper Shard',
+        category: 'bossMaterial',
+        description: 'A splinter of the Soul Reaper\'s scythe.',
     },
     soul_shard: {
         id: 'soul_shard',

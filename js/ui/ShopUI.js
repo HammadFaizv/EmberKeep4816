@@ -1,31 +1,32 @@
 import { UIComponent, el, button } from './dom.js';
 import { ELEMENTS } from '../config/elementConfig.js';
-import { SPELLS } from '../config/spellConfig.js';
+import { CURRENCIES } from '../config/itemConfig.js';
 import { ProgressionRequirement } from '../progression/ProgressionRequirement.js';
 
 /**
- * ShopUI — Spell Shop screen: owned spells, spells for sale, upgrade tiers.
- * Purchases go through SpellShop; this component only renders and forwards.
+ * ShopUI — renders ANY shop that follows the shop interface (see
+ * shops/ShopManager.js): the Witch's Spell Shop, the Relic Merchant...
+ * Purchases go through the shop; this component only renders and forwards.
  */
 export class ShopUI extends UIComponent {
     build() {
         const { shop, costs, profile, onBack } = this.props;
-        const unlockItems = shop.getUnlockItems();
-        const upgradeItems = shop.getUpgradeItems();
+        const summary = shop.getOwnedSummary?.();
         const item = (it) => {
             const affordable = shop.canPurchase(it);
             const unmet = ProgressionRequirement.unmet(it.requirements, profile).map((r) => ProgressionRequirement.describe(r));
             const element = ELEMENTS[it.data.element];
-            return el('div', { class: `shop-item ${affordable ? '' : 'shop-item-disabled'}`, style: { '--element': element?.color } }, [
+            const done = it.data.maxed || it.data.owned;
+            return el('div', { class: `shop-item ${affordable || done ? '' : 'shop-item-disabled'}`, style: { '--element': element?.color } }, [
                 el('div', { class: 'shop-item-head' }, [
                     el('span', { class: 'element-dot' }),
                     el('strong', {}, it.name),
-                    el('span', { class: 'tag' }, element?.name ?? ''),
+                    element?.isElemental ? el('span', { class: 'tag' }, element.name) : null,
                 ]),
                 el('p', { class: 'small' }, it.description),
                 unmet.length ? el('p', { class: 'small warn' }, `Requires: ${unmet.join(', ')}`) : null,
-                el('div', { class: 'shop-item-foot' }, it.data.maxed
-                    ? [el('span', { class: 'ok small' }, 'MAX')]
+                el('div', { class: 'shop-item-foot' }, done
+                    ? [el('span', { class: 'ok small' }, it.data.owned ? 'OWNED' : 'MAX')]
                     : [
                         el('span', { class: 'cost' }, costs.describe(it.costs)),
                         button('Buy', () => { if (shop.purchase(it)) this.rerender(); }, 'btn btn-small btn-primary', { disabled: !affordable }),
@@ -37,18 +38,21 @@ export class ShopUI extends UIComponent {
             el('div', { class: 'panel shop' }, [
                 el('div', { class: 'screen-header' }, [
                     el('h2', {}, shop.name),
-                    el('span', { class: 'res-gold' }, `● ${profile.currency('gold')}`),
+                    ...(shop.currencies ?? ['gold']).map((id) =>
+                        el('span', { class: 'res-currency', style: { color: CURRENCIES[id]?.color } }, `${CURRENCIES[id]?.icon ?? ''} ${profile.currency(id)}`)),
                     button('Back to Map', onBack, 'btn'),
                 ]),
-                el('div', { class: 'shop-owned' }, [
-                    el('span', { class: 'muted small' }, 'Unlocked spells: '),
-                    ...profile.data.unlockedSpells.map((id) => el('span', { class: 'tag', style: { borderColor: ELEMENTS[SPELLS[id]?.element]?.color } }, SPELLS[id]?.name ?? id)),
-                ]),
-                el('div', { class: 'shop-columns' }, [
-                    el('section', {}, [el('h3', {}, 'Learn New Spells'),
-                        unlockItems.length ? el('div', { class: 'shop-list' }, unlockItems.map(item)) : el('p', { class: 'muted' }, 'You know every spell for sale.')]),
-                    el('section', {}, [el('h3', {}, 'Upgrade Spells'), el('div', { class: 'shop-list' }, upgradeItems.map(item))]),
-                ]),
+                summary ? el('div', { class: 'shop-owned' }, [
+                    el('span', { class: 'muted small' }, summary.label),
+                    ...summary.tags.map((t) => el('span', { class: 'tag', style: { borderColor: ELEMENTS[t.element]?.color } }, t.text)),
+                ]) : null,
+                el('div', { class: 'shop-columns' }, shop.getSections().map((section) =>
+                    el('section', {}, [
+                        el('h3', {}, section.title),
+                        section.items.length
+                            ? el('div', { class: 'shop-list' }, section.items.map(item))
+                            : el('p', { class: 'muted' }, section.empty ?? ''),
+                    ]))),
             ]),
         ]);
     }

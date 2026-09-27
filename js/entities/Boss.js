@@ -7,6 +7,10 @@ import { BossController } from '../bosses/BossController.js';
  * The Boss holds DATA (hp, phases, attacks, current phase). Behavior lives in
  * BossController + BossStateMachine + BossState subclasses. Phase changes are
  * *requested* here (pendingPhase) and *performed* by PHASE_TRANSITION state.
+ *
+ * Phases may override `immunities` and `resistances` (e.g. the Demon Lord
+ * loses his fire immunity in Cataclysm); the getters below always return the
+ * values for the current phase, so ElementSystem needs no boss-specific code.
  */
 export class Boss extends Enemy {
     constructor(def, { scaling, ...rest }) {
@@ -22,18 +26,25 @@ export class Boss extends Enemy {
         this.attacks = def.attacks ?? {};
         this.fsmConfig = def.fsm ?? {};
         this.rewards = def.rewards ?? [];
+        this.dialogue = def.dialogue ?? {};
         this.dying = false;
         this.invulnerable = false;
         this.stunImmuneTime = 0;
         this.telegraph = null;   // { attackId, progress } read by rendering
+        this.charge = null;      // active dash data (BossAttacks 'charge')
         this.controller = new BossController(this);
     }
 
     get isBoss() { return true; }
     get isMiniboss() { return this.kind === 'miniboss'; }
     get targetable() { return this.alive && !this.dying; }
-    get phase() { return this.phases[this.phaseIndex]; }
+    get phase() { return this.phases?.[this.phaseIndex]; }
     get currentMoveSpeed() { return this.moveSpeed * (this.phase.speedMult ?? 1) * this.moveMult; }
+
+    get immunities() { return this.phase?.immunities ?? this._immunities; }
+    set immunities(list) { this._immunities = list; }
+    get resistances() { return this.phase?.resistances ? { ...this._resistances, ...this.phase.resistances } : this._resistances; }
+    set resistances(map) { this._resistances = map; }
 
     /** Attack ids usable in the current phase. */
     get activeAttackIds() { return this.phase.attacks ?? Object.keys(this.attacks); }
@@ -55,6 +66,9 @@ export class Boss extends Enemy {
         this.phaseIndex = this.pendingPhase;
         this.pendingPhase = null;
     }
+
+    /** Hook for subclasses (MiniBoss flees). */
+    wantsToFlee() { return false; }
 
     /** Status effects call this; the FSM decides whether a stun actually lands. */
     onStatusApplied(type, status) {

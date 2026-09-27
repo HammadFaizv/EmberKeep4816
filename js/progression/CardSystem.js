@@ -1,13 +1,14 @@
 import { Events } from '../core/EventBus.js';
 import { CARDS, RARITIES } from '../config/cardConfig.js';
 import { SPELLS } from '../config/spellConfig.js';
+import { FUSIONS } from '../config/fusionConfig.js';
 import { EffectRegistry } from './EffectRegistry.js';
 
 /**
  * CardSystem — builds level-up card offers and applies the chosen card.
  *
  * Offers are generated from data (cardConfig.js):
- *   1. template cards expand into one concrete card per spell,
+ *   1. template cards expand into concrete cards (one per spell, per fusion recipe...),
  *   2. cards whose prerequisites fail for the current stage are dropped,
  *   3. N cards are drawn weighted by rarity.
  * The UI only ever receives plain card objects; it never decides what is offered.
@@ -20,6 +21,9 @@ const PREREQUISITES = {
     hasSpell: (r, ctx) => ctx.spellBook.has(r.id),
     hasSpellWithElement: (r, ctx) => ctx.spellBook.spells.some((s) => s.element === r.element),
     minLevel: (r, ctx) => ctx.stage.levels.level >= r.level,
+    stageType: (r, ctx) => ctx.stage.type === r.stageType,
+    featureUnlocked: (r, ctx) => ctx.stage.services.profile.isFeatureUnlocked(r.id),
+    freeBuildSlot: (r, ctx) => (ctx.stage.freeBuildSlots?.(r.kind).length ?? 0) > 0,
 };
 
 /** Template expanders: turn one card definition into several concrete cards. */
@@ -28,6 +32,24 @@ const TEMPLATES = {
         .filter((id) => !ctx.spellBook.has(id))
         .map((id) => instantiate(card, id)),
     perEquippedSpell: (card, ctx) => ctx.spellBook.spells.map((s) => instantiate(card, s.id)),
+    /** One card per fusion recipe whose parts are all equipped. */
+    perFusionRecipe: (card, ctx) => FUSIONS
+        .filter((f) => f.parts.every((id) => ctx.spellBook.has(id)) && !ctx.spellBook.has(f.result))
+        .map((f) => {
+            const result = SPELLS[f.result];
+            const parts = f.parts.map((id) => SPELLS[id]?.name ?? id).join(' + ');
+            return {
+                ...card,
+                id: `${card.id}:${f.id}`,
+                baseId: card.id,
+                spellId: f.result,
+                element: result.element,
+                name: card.name.replace('{spell}', result.name),
+                description: card.description.replace('{parts}', parts).replace('{spell}', result.name),
+                meta: result.description,
+                effects: [{ type: 'fuseSpells', parts: f.parts, result: f.result }],
+            };
+        }),
 };
 
 function instantiate(card, spellId) {
@@ -61,7 +83,7 @@ export class CardSystem {
         const pool = this.cards
             .flatMap((card) => (card.template ? TEMPLATES[card.template]?.(card, ctx) ?? [] : [card]))
             .filter((card) => this._prerequisitesMet(card, ctx));
-        return this.rng.weightedSample(pool, count, (card) => RARITIES[card.rarity]?.weight ?? 1);
+        return this.rng.weightedSample(pool, count, (card) => card.weight ?? RARITIES[card.rarity]?.weight ?? 1);
     }
 
     apply(card, ctx) {
@@ -70,8 +92,13 @@ export class CardSystem {
             player: ctx.player,
             spellBook: ctx.spellBook,
             spellId: card.spellId,
+            stage: ctx.stage,
+            onFused: (spell) => this.bus.emit(Events.SPELLS_FUSED, { spell }),
         }, `card:${card.id}`);
         ctx.player.onStatsChanged();
+        for (const e of card.effects) {
+            if (e.type === 'timedStat') this.bus.emit(Events.BUFF_APPLIED, { label: e.label, duration: e.duration });
+        }
         this.bus.emit(Events.CARD_SELECTED, { card });
     }
 

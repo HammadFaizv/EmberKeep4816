@@ -35,16 +35,20 @@ export class PlayerProgression {
     isFeatureUnlocked(id) { return this.data.unlockedFeatures.includes(id); }
     hasVisitedNpc(npcId) { return this.data.story.visitedNpcs.includes(npcId); }
     hasUpgrade(nodeId) { return this.data.permanentUpgrades.includes(nodeId); }
+    ownsRelic(relicId) { return this.data.relics.includes(relicId); }
+    isGateOpened(gateId) { return this.data.openedGates.includes(gateId); }
+    get ngPlus() { return this.data.story.ngPlus ?? 0; }
 
     /**
      * Builds the permanent (out-of-stage) stat block: base stats + permanent
-     * upgrades (+ pets when `includePets`). Stages start from this and then
-     * layer temporary card bonuses on top.
+     * upgrades + relics (+ pets when `includePets`). Stages start from this and
+     * then layer temporary card bonuses on top.
      */
-    buildPermanentStats({ upgrades, pets, includePets = true }) {
+    buildPermanentStats({ upgrades, pets, relics, includePets = true }) {
         const stats = new PlayerStats(GAME_CONFIG.playerBaseStats);
         stats.setBase('petSlots', GAME_CONFIG.playerBaseStats.petSlots + this.data.petSlots);
         upgrades?.applyTo({ stats });
+        relics?.applyTo({ stats });
         if (includePets) pets?.applyTo({ stats });
         return stats;
     }

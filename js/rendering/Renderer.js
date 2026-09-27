@@ -5,25 +5,32 @@ import { EffectsRenderer } from './EffectsRenderer.js';
 import { UIOverlayRenderer } from './UIOverlayRenderer.js';
 import { StageRenderer } from './StageRenderer.js';
 import { MapRenderer } from './MapRenderer.js';
+import { SpriteLibrary } from '../assets/SpriteLibrary.js';
+import { TextureFactory } from '../assets/TextureFactory.js';
 
 /**
  * Renderer — owns the canvas context and camera, and composes the
  * specialised renderers. Rendering READS game state and never changes it.
  *
- * Replacing placeholder shapes with sprites later means registering sprite
- * painters in EntityRenderer/SpellRenderer/EffectsRenderer; no gameplay file
- * changes.
+ * Art: entities with a `render.sprite` key are drawn from the SpriteLibrary
+ * (procedural pixel art, or loaded sprite sheets); everything else falls back
+ * to the shape painters in EntityRenderer/SpellRenderer/EffectsRenderer.
+ * Ground textures come from the TextureFactory. No gameplay file changes when
+ * art changes.
  */
 export class Renderer {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
+        this.ctx.imageSmoothingEnabled = false; // crisp pixel art
         this.width = canvas.width;
         this.height = canvas.height;
         this.camera = { x: 0, y: 0 };
         this.time = 0;
 
-        this.entities = new EntityRenderer();
+        this.sprites = new SpriteLibrary();
+        this.textures = new TextureFactory();
+        this.entities = new EntityRenderer(this.sprites);
         this.spells = new SpellRenderer();
         this.effects = new EffectsRenderer();
         this.overlay = new UIOverlayRenderer(this);

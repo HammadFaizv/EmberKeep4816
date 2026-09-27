@@ -1,5 +1,6 @@
 import { Events } from '../core/EventBus.js';
 import { STAGES } from '../config/stageConfig.js';
+import { GAME_CONFIG } from '../config/gameConfig.js';
 
 /**
  * StageManager — owns the current Stage and converts its outcome into
@@ -49,7 +50,7 @@ export class StageManager {
         const summary = this._baseSummary(stage);
         const firstClear = !this.profile.isStageCompleted(stage.id);
         const newPaths = this._collect(Events.PATH_UNLOCKED, () => {
-            const stageRewards = firstClear ? stage.def.rewards ?? [] : this._repeatRewards(stage.def.rewards);
+            const stageRewards = this._ngPlusRewards(firstClear ? stage.def.rewards ?? [] : this._repeatRewards(stage.def.rewards));
             const bossRewards = stage.defeated.flatMap((b) => (this.profile.hasDefeatedBoss(b.id) ? [] : b.rewards));
             this.rewards.grant([...stageRewards, ...bossRewards, ...stage.loot], `stage:${stage.id}`);
             summary.rewards = [...stageRewards, ...bossRewards, ...stage.loot];
@@ -84,6 +85,8 @@ export class StageManager {
             level: stage.levels.level,
             kills: stage.stats.kills,
             gold: stage.stats.goldCollected,
+            souls: stage.stats.soulsCollected,
+            combos: stage.stats.combos,
             time: stage.elapsed,
             rewards: [],
             newPaths: [],
@@ -95,6 +98,14 @@ export class StageManager {
         return rewards
             .filter((r) => r.type === 'currency')
             .map((r) => ({ ...r, amount: Math.ceil(r.amount * 0.25) }));
+    }
+
+    /** New Game+ cycles pay more currency. */
+    _ngPlusRewards(rewards) {
+        const ng = this.profile.ngPlus;
+        if (!ng) return rewards;
+        const mult = 1 + ng * GAME_CONFIG.newGamePlus.rewardMult;
+        return rewards.map((r) => (r.type === 'currency' ? { ...r, amount: Math.round(r.amount * mult) } : r));
     }
 
     _collect(event, fn) {

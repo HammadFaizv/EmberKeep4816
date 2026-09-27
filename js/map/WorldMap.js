@@ -71,6 +71,16 @@ export class WorldMap {
 
     lockReasons(node) { return MapRequirement.lockReasons(node, this.profile); }
 
+    /** Forgets computed flags (New Game+ / save reset) and recomputes silently. */
+    reset() {
+        for (const node of this.nodes) {
+            node.unlocked = false;
+            node.completed = false;
+        }
+        this._initialised = false;
+        this.refresh();
+    }
+
     _computeUnlocked(node) {
         if (node.start) return true;
         if (node.stageId && this.profile.isStageUnlocked(node.stageId)) return true;
