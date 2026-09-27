@@ -8,23 +8,39 @@ import { CardSelectionUI } from '../ui/CardSelectionUI.js';
  */
 export class SpellSelectState extends BaseState {
     enter() {
-        const { stageManager, spellManager, states } = this.game;
+        const { stageManager, states } = this.game;
         const stage = stageManager.current;
         this.stage = stage;
-        const offers = spellManager.generateStageOffer(this.game.config.progression.spellChoicesAtStageStart, stage.player.spellBook, stage.rules);
-        const next = () => states.change(stage.isFinal ? GameStates.FINAL_BOSS : GameStates.PLAYING);
+        this.next = () => states.change(stage.isFinal ? GameStates.FINAL_BOSS : GameStates.PLAYING);
+        this.showOffer();
+    }
+
+    /** Rerolls here spend the same per-run pool as level-up cards (stage.rerolls). */
+    showOffer() {
+        const { stage } = this;
+        const offers = this.game.spellManager.generateStageOffer(this.game.config.progression.spellChoicesAtStageStart, stage.player.spellBook, stage.rules);
         if (offers.length === 0) {
-            this.skip = next;
+            this.skip = this.next;
             return;
         }
-        this.mount(new CardSelectionUI({
+        // Rerolling only makes sense when there are more spells than slots on offer.
+        const canReroll = this.game.spellManager.getAvailableStageSpells(stage.rules).length > offers.length;
+        this.ui = this.mount(new CardSelectionUI({
             title: 'Choose Your Spell',
             subtitle: `${stage.name} — ${stage.description}`,
             cards: offers,
             onSelect: (card) => {
                 stage.player.spellBook.addSpell(card.spellId);
-                next();
+                this.next();
             },
+            reroll: canReroll ? {
+                remaining: stage.rerolls,
+                onReroll: () => {
+                    stage.rerolls -= 1;
+                    this.unmount(this.ui);
+                    this.showOffer();
+                },
+            } : null,
         }), 'overlay');
     }
 

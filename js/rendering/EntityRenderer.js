@@ -307,7 +307,7 @@ const DEFAULT_PAINTERS = {
     },
 
     pickup_exp(ctx, e, time) {
-        circle(ctx, 0, Math.sin(time * 4 + e.id) * 2, 5, e.render.color ?? '#6fd3ff');
+        circle(ctx, 0, Math.sin(time * 4 + e.id), 2.5, e.render.color ?? '#6fd3ff');
     },
 
     pickup_soul(ctx, e, time) {
@@ -369,14 +369,14 @@ const SPRITE_DECORATORS = {
     },
 
     pickup_exp(ctx, e, time) {
-        const glow = ctx.createRadialGradient(0, 0, 1, 0, 0, 12);
-        glow.addColorStop(0, e.render.color + '99');
+        const glow = ctx.createRadialGradient(0, 0, 1, 0, 0, 6);
+        glow.addColorStop(0, e.render.color + '88');
         glow.addColorStop(1, e.render.color + '00');
         ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(0, 0, 12, 0, TAU);
+        ctx.arc(0, 0, 6, 0, TAU);
         ctx.fill();
-        return { bob: Math.sin(time * 4 + e.id) * 2, shadow: false };
+        return { bob: Math.sin(time * 4 + e.id), shadow: false };
     },
 
     pickup_soul(ctx, e, time) {

@@ -60,7 +60,7 @@ Pickup.registerKind('gold', { event: Events.GOLD_COLLECTED, sprite: () => 'coin'
 Pickup.registerKind('exp', {
     event: Events.EXP_COLLECTED,
     lifetime: GAME_CONFIG.expOrbs.lifetime,
-    radius: 6,
+    radius: 3,
     sprite: (amount) => expTier(amount).sprite,
     color: (amount) => expTier(amount).color,
 });

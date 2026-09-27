@@ -30,6 +30,12 @@ export const GAME_CONFIG = Object.freeze({
         // Adding a new element needs no new stat definitions.
     },
 
+    /**
+     * Global enemy density: every wave spawns `countMult` × more enemies and
+     * spaces them `1 / rateMult` as far apart, on top of difficulty tiers.
+     */
+    spawnDensity: { countMult: 1.5, rateMult: 1.5 },
+
     limits: {
         maxCooldownReduction: 0.6,
         maxNormalEnemyResistance: 0.8, // normal enemies can never be fully immune
@@ -41,6 +47,7 @@ export const GAME_CONFIG = Object.freeze({
         startingSpells: ['fireball', 'spark', 'wind_blade'],
         cardChoices: 3,
         spellChoicesAtStageStart: 3,
+        rerollsPerRun: 2,          // card/spell offer rerolls per stage attempt
     },
 
     /**

@@ -1,10 +1,12 @@
 import { Events } from '../core/EventBus.js';
+import { GAME_CONFIG } from '../config/gameConfig.js';
 
 /**
  * EnemySpawner — runs a stage's wave timeline.
  *
  * Wave data: { duration, spawns: [{ enemy, count, interval, delay, directions }], boss, miniboss }
- *  - counts scale with difficulty `countMult`, intervals with `spawnRateMult`
+ *  - counts scale with difficulty `countMult` × GAME_CONFIG.spawnDensity.countMult,
+ *    intervals with `spawnRateMult` × spawnDensity.rateMult
  *  - timed waves end after `duration`
  *  - boss/miniboss waves end when that boss is defeated
  *
@@ -75,7 +77,9 @@ export class EnemySpawner {
         this.waveIndex = index;
         this.waveElapsed = 0;
         const wave = this.currentWave;
-        const { countMult, spawnRateMult } = this.scaling;
+        const density = GAME_CONFIG.spawnDensity;
+        const countMult = this.scaling.countMult * density.countMult;
+        const spawnRateMult = this.scaling.spawnRateMult * density.rateMult;
         this.queues = (wave.spawns ?? []).map((s) => ({
             enemy: s.enemy,
             directions: s.directions,
