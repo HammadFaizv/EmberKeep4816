@@ -20,17 +20,20 @@ export const GAME_CONFIG = Object.freeze({
         lifesteal: 0,           // fraction of damage dealt returned as HP
         regen: 0,               // HP per second
         goldDropChance: 0,      // added to each enemy's base drop chance
+        goldValue: 1,           // multiplier on every gold coin dropped
         expGain: 1,
         pickupRadius: 70,
         spellSlots: 2,
         petSlots: 0,
         // Elemental damage bonuses are open-ended keys: `elementDamage.<element>`.
+        // Elemental resistances likewise: `resist.<element>` plus `resist.all`.
         // Adding a new element needs no new stat definitions.
     },
 
     limits: {
         maxCooldownReduction: 0.6,
         maxNormalEnemyResistance: 0.8, // normal enemies can never be fully immune
+        maxPlayerResistance: 0.75,
         minDamage: 1,
     },
 
@@ -38,6 +41,29 @@ export const GAME_CONFIG = Object.freeze({
         startingSpells: ['fireball', 'spark', 'wind_blade'],
         cardChoices: 3,
         spellChoicesAtStageStart: 3,
+    },
+
+    /**
+     * EXP orbs: enemies drop orbs worth their `exp`; the orb's look is picked
+     * from the first tier whose `min` the value reaches.
+     */
+    expOrbs: {
+        lifetime: 45,
+        tiers: [
+            { min: 0, sprite: 'exp_small', color: '#6fd3ff' },
+            { min: 5, sprite: 'exp_medium', color: '#7dff9a' },
+            { min: 20, sprite: 'exp_large', color: '#ff8af0' },
+        ],
+    },
+
+    /**
+     * New Game+: every cycle shifts each stage up `tierStep` difficulty tiers
+     * (tiers past the table are extrapolated) and multiplies currency rewards.
+     */
+    newGamePlus: {
+        tierStep: 2,
+        overflowMult: 0.35,   // extra ×HP/damage per tier beyond the last table entry
+        rewardMult: 0.5,      // +50% currency rewards per cycle
     },
 
     /**
@@ -65,10 +91,18 @@ export const GAME_CONFIG = Object.freeze({
         },
         spellCombos: {
             name: 'Spell Combos',
-            // TODO: Spell combos are not designed yet. The upgrade tree grants this
-            // feature via an `unlockFeature` effect; a future ComboSystem should check
-            // `unlocks.isFeatureUnlocked('spellCombos')` before evaluating combos.
+            // Granted by the 'Spell Resonance' upgrade (unlockFeature effect).
+            // combat/ComboSystem.js checks it when a stage starts.
             requirements: [{ type: 'never' }],
+        },
+        spellFusion: {
+            name: 'Spell Fusion',
+            // Granted by the 'Soul Weaving' upgrade. Enables fusion cards.
+            requirements: [{ type: 'never' }],
+        },
+        relicShop: {
+            name: 'Relic Merchant',
+            requirements: [{ type: 'defeatBoss', id: 'bone_warden' }],
         },
     },
 

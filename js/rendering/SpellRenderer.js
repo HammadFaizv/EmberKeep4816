@@ -70,6 +70,88 @@ const DEFAULT_PAINTERS = {
         ctx.fill();
     },
 
+    shard(ctx, p) {
+        const r = p.radius;
+        ctx.fillStyle = p.render.color;
+        ctx.beginPath();
+        ctx.moveTo(r * 1.8, 0);
+        ctx.lineTo(0, -r * 0.8);
+        ctx.lineTo(-r * 1.4, 0);
+        ctx.lineTo(0, r * 0.8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-r * 0.2, -r * 0.25, r, r * 0.3);
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = p.render.color;
+        ctx.fillRect(-r * 3.4, -r * 0.3, r * 2, r * 0.6);
+        ctx.globalAlpha = 1;
+    },
+
+    lance(ctx, p) {
+        const r = p.radius;
+        const g = ctx.createLinearGradient(-r * 5, 0, r * 2, 0);
+        g.addColorStop(0, 'rgba(191,234,255,0)');
+        g.addColorStop(1, p.render.color);
+        ctx.fillStyle = g;
+        ctx.fillRect(-r * 5, -r * 0.35, r * 5, r * 0.7);
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(r * 2.2, 0);
+        ctx.lineTo(0, -r * 0.6);
+        ctx.lineTo(0, r * 0.6);
+        ctx.closePath();
+        ctx.fill();
+    },
+
+    dart(ctx, p) {
+        const r = p.radius;
+        ctx.strokeStyle = p.render.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-r * 2, 0);
+        ctx.lineTo(r * 1.2, 0);
+        ctx.stroke();
+        ctx.fillStyle = '#d8ffb0';
+        ctx.beginPath();
+        ctx.moveTo(r * 1.8, 0);
+        ctx.lineTo(r * 0.6, -r * 0.6);
+        ctx.lineTo(r * 0.6, r * 0.6);
+        ctx.fill();
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = p.render.color;
+        ctx.beginPath();
+        ctx.arc(-r * 2.4, 0, r * 0.6, 0, TAU);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    },
+
+    ember(ctx, p, time) {
+        const r = p.radius;
+        const g = ctx.createRadialGradient(0, 0, 1, 0, 0, r * 1.8);
+        g.addColorStop(0, '#fff0c0');
+        g.addColorStop(0.45, p.render.color);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 1.8 * (0.9 + Math.sin(time * 20 + p.id) * 0.1), 0, TAU);
+        ctx.fill();
+    },
+
+    spore(ctx, p, time) {
+        const r = p.radius;
+        ctx.fillStyle = p.render.color;
+        ctx.globalAlpha = 0.85;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, TAU);
+        ctx.fill();
+        ctx.fillStyle = '#3a4a1a';
+        ctx.rotate(time * 3);
+        ctx.fillRect(-1, -r * 0.6, 2, 2);
+        ctx.fillRect(r * 0.3, 0, 2, 2);
+        ctx.globalAlpha = 1;
+    },
+
     bone(ctx, p, time) {
         ctx.rotate(time * 10);
         ctx.fillStyle = p.render.color;

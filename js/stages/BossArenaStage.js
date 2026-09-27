@@ -5,8 +5,10 @@ import { OpenFieldStage } from './OpenFieldStage.js';
  * Demonstrates extending an existing stage type: only spawn placement and
  * rules change; everything else is inherited.
  *
- * TODO: Arena hazards (lava pools, closing walls) belong in onUpdate() here,
- * implemented as Hazard entities so CombatSystem resolves their damage.
+ * Arena hazards (lava pools, a closing ring of fire) are data-driven:
+ * `environment.hazards` on the stage, or `arenaHazard` phase events on the
+ * boss (the Demon Lord floods the summit with lava in his second phase).
+ * See stages/ArenaHazards.js; damage always goes through Hazard entities.
  */
 export class BossArenaStage extends OpenFieldStage {
     static type = 'BOSS_ARENA';

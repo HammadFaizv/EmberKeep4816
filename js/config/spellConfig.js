@@ -11,6 +11,16 @@
  * shop.unlockCosts / shop.upgrades use the generic cost format
  *   [{ type: 'currency', id: 'gold', amount }, { type: 'item', id, amount }]
  * so spells can later require boss materials without code changes.
+ *
+ * Flags:
+ *   fused   result of spell fusion (config/fusionConfig.js): never sold or
+ *           offered at stage start, only created by a fusion card.
+ *   hidden  internal spells used by towers and pets; never shown to the player.
+ * Optional blocks:
+ *   zone          lingering Hazard settings for the 'zone' behavior
+ *   orbit         orbit settings for the 'orbit' behavior
+ *   fusion        { carrier, payload } for the 'fusion' behavior
+ *   bonusVsStatus { freeze: 1 } = +100% damage against frozen targets
  */
 export const SPELLS = Object.freeze({
     fireball: {
@@ -167,5 +177,335 @@ export const SPELLS = Object.freeze({
             ],
             upgrades: [],
         },
+    },
+    // ---- Ice ------------------------------------------------------------------
+    frost_shard: {
+        id: 'frost_shard',
+        name: 'Frost Shard',
+        description: 'A shard of ice that chills. Four chills freeze the target solid.',
+        behavior: 'projectile',
+        targeting: 'nearest',
+        element: 'ice',
+        baseDamage: 8,
+        elementalDamage: 8,
+        cooldown: 0.95,
+        range: 380,
+        projectileSpeed: 480,
+        areaRadius: 0,
+        targetCount: 1,
+        pierce: 0,
+        statusEffects: [{ type: 'chill', duration: 2.5, amount: 0.15, freezeAt: 4, freezeDuration: 1.2 }],
+        visual: { shape: 'shard', color: '#8fd8ff', size: 6 },
+        shop: {
+            unlockCosts: [{ type: 'currency', id: 'gold', amount: 90 }],
+            upgrades: [
+                { costs: [{ type: 'currency', id: 'gold', amount: 70 }], mods: [{ stat: 'elementalDamage', op: 'add', value: 4 }] },
+                { costs: [{ type: 'currency', id: 'gold', amount: 140 }], mods: [{ stat: 'targetCount', op: 'add', value: 1 }] },
+            ],
+        },
+    },
+
+    glacial_nova: {
+        id: 'glacial_nova',
+        name: 'Glacial Nova',
+        description: 'Flash-freezes every enemy around the doll. Bosses are only slowed.',
+        behavior: 'nova',
+        targeting: 'self',
+        element: 'ice',
+        baseDamage: 6,
+        elementalDamage: 14,
+        cooldown: 4.5,
+        range: 140,
+        projectileSpeed: 0,
+        areaRadius: 140,
+        targetCount: 99,
+        statusEffects: [{ type: 'freeze', duration: 1.6 }],
+        visual: { shape: 'ring', color: '#bfeaff', size: 140, effect: 'frost' },
+        shop: {
+            unlockCosts: [{ type: 'currency', id: 'gold', amount: 140 }],
+            upgrades: [
+                { costs: [{ type: 'currency', id: 'gold', amount: 130 }], mods: [{ stat: 'cooldown', op: 'mul', value: 0.85 }] },
+                { costs: [{ type: 'currency', id: 'gold', amount: 200 }], mods: [{ stat: 'areaRadius', op: 'mul', value: 1.2 }, { stat: 'range', op: 'mul', value: 1.2 }] },
+            ],
+        },
+    },
+
+    ice_lance: {
+        id: 'ice_lance',
+        name: 'Ice Lance',
+        description: 'A piercing lance aimed at the toughest enemy. Shatters frozen targets for double damage.',
+        behavior: 'projectile',
+        targeting: 'strongest',
+        element: 'ice',
+        baseDamage: 14,
+        elementalDamage: 10,
+        cooldown: 1.6,
+        range: 500,
+        projectileSpeed: 720,
+        areaRadius: 0,
+        targetCount: 1,
+        pierce: 4,
+        bonusVsStatus: { freeze: 1, chill: 0.3 },
+        statusEffects: [],
+        visual: { shape: 'lance', color: '#bfeaff', size: 7 },
+        shop: {
+            unlockCosts: [{ type: 'currency', id: 'gold', amount: 170 }],
+            unlockRequirements: [{ type: 'spellUnlocked', id: 'frost_shard' }],
+            upgrades: [
+                { costs: [{ type: 'currency', id: 'gold', amount: 150 }], mods: [{ stat: 'baseDamage', op: 'add', value: 6 }] },
+            ],
+        },
+    },
+
+    // ---- Poison ---------------------------------------------------------------
+    venom_dart: {
+        id: 'venom_dart',
+        name: 'Venom Dart',
+        description: 'Rapid darts that stack poison (up to 5 stacks).',
+        behavior: 'projectile',
+        targeting: 'nearest',
+        element: 'poison',
+        baseDamage: 4,
+        elementalDamage: 4,
+        cooldown: 0.65,
+        range: 360,
+        projectileSpeed: 540,
+        areaRadius: 0,
+        targetCount: 1,
+        pierce: 0,
+        statusEffects: [{ type: 'poison', duration: 4, dps: 3, maxStacks: 5 }],
+        visual: { shape: 'dart', color: '#9be15d', size: 5 },
+        shop: {
+            unlockCosts: [{ type: 'currency', id: 'gold', amount: 100 }],
+            upgrades: [
+                { costs: [{ type: 'currency', id: 'gold', amount: 90 }], mods: [{ stat: 'targetCount', op: 'add', value: 1 }] },
+                { costs: [{ type: 'currency', id: 'gold', amount: 160 }], mods: [{ stat: 'cooldown', op: 'mul', value: 0.8 }] },
+            ],
+        },
+    },
+
+    toxic_cloud: {
+        id: 'toxic_cloud',
+        name: 'Toxic Cloud',
+        description: 'Leaves a lingering cloud of poison where enemies gather.',
+        behavior: 'zone',
+        targeting: 'nearest',
+        element: 'poison',
+        baseDamage: 0,
+        elementalDamage: 12,
+        cooldown: 5,
+        range: 360,
+        projectileSpeed: 0,
+        areaRadius: 85,
+        targetCount: 1,
+        zoneDuration: 4,
+        zone: { duration: 4, tickFraction: 0.3, tickInterval: 0.5, visual: 'poison' },
+        statusEffects: [{ type: 'poison', duration: 3, dps: 3, maxStacks: 6 }],
+        visual: { shape: 'cloud', color: '#9be15d', size: 85 },
+        shop: {
+            unlockCosts: [{ type: 'currency', id: 'gold', amount: 160 }],
+            upgrades: [
+                { costs: [{ type: 'currency', id: 'gold', amount: 150 }], mods: [{ stat: 'areaRadius', op: 'mul', value: 1.25 }] },
+                { costs: [{ type: 'currency', id: 'gold', amount: 220 }], mods: [{ stat: 'zoneDuration', op: 'add', value: 2 }] },
+            ],
+        },
+    },
+
+    // ---- More fire & wind -----------------------------------------------------
+    meteor: {
+        id: 'meteor',
+        name: 'Meteor',
+        description: 'After a short delay a meteor crashes onto the toughest enemy, leaving burning ground.',
+        behavior: 'zone',
+        targeting: 'strongest',
+        element: 'fire',
+        baseDamage: 22,
+        elementalDamage: 30,
+        cooldown: 5.5,
+        range: 460,
+        projectileSpeed: 0,
+        areaRadius: 90,
+        targetCount: 1,
+        zoneDuration: 3,
+        zone: { warmup: 0.8, impact: true, duration: 3, tickFraction: 0.12, tickInterval: 0.5, visual: 'fire' },
+        statusEffects: [{ type: 'burn', duration: 3, dps: 5 }],
+        visual: { shape: 'meteor', color: '#ff5a1f', size: 90 },
+        shop: {
+            unlockCosts: [{ type: 'currency', id: 'gold', amount: 240 }],
+            unlockRequirements: [{ type: 'completeStageCount', count: 5 }],
+            upgrades: [
+                { costs: [{ type: 'currency', id: 'gold', amount: 220 }], mods: [{ stat: 'targetCount', op: 'add', value: 1 }] },
+            ],
+        },
+    },
+
+    whirling_blades: {
+        id: 'whirling_blades',
+        name: 'Whirling Blades',
+        description: 'Three blades of wind orbit the doll for 5 seconds, cutting anything they touch.',
+        behavior: 'orbit',
+        targeting: 'self',
+        element: 'wind',
+        baseDamage: 7,
+        elementalDamage: 6,
+        cooldown: 7,
+        range: 170,
+        projectileSpeed: 0,
+        areaRadius: 72,
+        targetCount: 3,
+        zoneDuration: 5,
+        knockback: 40,
+        orbit: { speed: 3.6, tickInterval: 0.3, duration: 5 },
+        statusEffects: [],
+        visual: { shape: 'blade', color: '#7fe3c4', size: 13 },
+        shop: {
+            unlockCosts: [{ type: 'currency', id: 'gold', amount: 180 }],
+            upgrades: [
+                { costs: [{ type: 'currency', id: 'gold', amount: 170 }], mods: [{ stat: 'targetCount', op: 'add', value: 1 }] },
+                { costs: [{ type: 'currency', id: 'gold', amount: 240 }], mods: [{ stat: 'zoneDuration', op: 'add', value: 2 }] },
+            ],
+        },
+    },
+
+    // ---- Fused spells (created only by fusion cards; see fusionConfig.js) ------
+    steam_bomb: {
+        id: 'steam_bomb',
+        name: 'Steam Bomb',
+        fused: true,
+        description: 'Fireball + Frost Shard: a scalding orb that bursts on impact, burning and chilling everything nearby.',
+        behavior: 'fusion',
+        fusion: {
+            carrier: 'projectile',
+            payload: {
+                type: 'nova', radius: 80, damageMult: 0.7, color: '#ffd8c0',
+                statusEffects: [{ type: 'burn', duration: 2, dps: 4 }, { type: 'chill', duration: 2, amount: 0.15, freezeAt: 4, freezeDuration: 1.2 }],
+            },
+        },
+        targeting: 'nearest',
+        element: 'fire',
+        baseDamage: 15,
+        elementalDamage: 15,
+        cooldown: 1.0,
+        range: 400,
+        projectileSpeed: 440,
+        areaRadius: 0,
+        targetCount: 1,
+        pierce: 0,
+        statusEffects: [{ type: 'burn', duration: 2, dps: 4 }],
+        visual: { shape: 'orb', color: '#ffc4a0', size: 9 },
+    },
+
+    storm_blade: {
+        id: 'storm_blade',
+        name: 'Storm Blade',
+        fused: true,
+        description: 'Wind Blade + Chain Spark: a piercing crescent that arcs lightning from every enemy it cuts.',
+        behavior: 'fusion',
+        fusion: { carrier: 'projectile', payload: { type: 'chain', jumps: 2, chainRange: 140, damageMult: 0.55 } },
+        targeting: 'nearest',
+        element: 'thunder',
+        baseDamage: 11,
+        elementalDamage: 10,
+        cooldown: 0.9,
+        range: 440,
+        projectileSpeed: 640,
+        areaRadius: 0,
+        targetCount: 1,
+        pierce: 4,
+        knockback: 30,
+        statusEffects: [{ type: 'stun', duration: 0.25, chance: 0.15 }],
+        visual: { shape: 'crescent', color: '#fff27a', size: 10 },
+    },
+
+    shatterstorm: {
+        id: 'shatterstorm',
+        name: 'Shatterstorm',
+        fused: true,
+        description: 'Thunder Strike + Glacial Nova: lightning strikes leave a freezing field behind.',
+        behavior: 'fusion',
+        fusion: {
+            carrier: 'strike',
+            payload: {
+                type: 'zone', radius: 95, duration: 2.5, tickFraction: 0.15, tickInterval: 0.5, visual: 'frost',
+                statusEffects: [{ type: 'chill', duration: 2, amount: 0.2, freezeAt: 3, freezeDuration: 1.4 }],
+            },
+        },
+        targeting: 'strongest',
+        element: 'thunder',
+        baseDamage: 12,
+        elementalDamage: 26,
+        cooldown: 2.6,
+        range: 460,
+        projectileSpeed: 0,
+        areaRadius: 80,
+        targetCount: 1,
+        statusEffects: [{ type: 'stun', duration: 0.5, chance: 0.5 }],
+        visual: { shape: 'strike', color: '#bfeaff', size: 80 },
+    },
+
+    plague_wind: {
+        id: 'plague_wind',
+        name: 'Plague Wind',
+        fused: true,
+        description: 'Venom Dart + Gale Ward: a poisonous gust that shoves enemies away and leaves a toxic cloud.',
+        behavior: 'fusion',
+        fusion: {
+            carrier: 'nova',
+            payload: { type: 'zone', radius: 60, duration: 2, tickFraction: 0.2, tickInterval: 0.5, visual: 'poison' },
+        },
+        targeting: 'self',
+        element: 'poison',
+        baseDamage: 5,
+        elementalDamage: 9,
+        cooldown: 2.4,
+        range: 120,
+        projectileSpeed: 0,
+        areaRadius: 120,
+        targetCount: 99,
+        knockback: 120,
+        statusEffects: [{ type: 'poison', duration: 4, dps: 3, maxStacks: 5 }],
+        visual: { shape: 'ring', color: '#b6ff6b', size: 120 },
+    },
+
+    // ---- Hidden spells (towers and pet abilities) -----------------------------
+    tower_bolt: {
+        id: 'tower_bolt', name: 'Tower Bolt', hidden: true,
+        description: 'Fired by arrow towers in Defense stages.',
+        behavior: 'projectile', targeting: 'nearest', element: 'physical',
+        baseDamage: 11, elementalDamage: 0, cooldown: 0.8, range: 320, projectileSpeed: 620,
+        targetCount: 1, pierce: 1, statusEffects: [],
+        visual: { shape: 'arrow', color: '#e8d9b0', size: 5 },
+    },
+    pet_ember: {
+        id: 'pet_ember', name: 'Ember Spit', hidden: true,
+        description: 'The Ember Sprite spits small fireballs.',
+        behavior: 'projectile', targeting: 'nearest', element: 'fire',
+        baseDamage: 3, elementalDamage: 6, cooldown: 1.6, range: 300, projectileSpeed: 420,
+        targetCount: 1, pierce: 0, statusEffects: [{ type: 'burn', duration: 2, dps: 2 }],
+        visual: { shape: 'orb', color: '#ff9a4d', size: 4 },
+    },
+    pet_zap: {
+        id: 'pet_zap', name: 'Pup Zap', hidden: true,
+        description: 'The Storm Pup zaps nearby enemies.',
+        behavior: 'chain', targeting: 'nearest', element: 'thunder',
+        baseDamage: 2, elementalDamage: 7, cooldown: 2.2, range: 200, chainCount: 1, chainRange: 110,
+        targetCount: 1, statusEffects: [{ type: 'stun', duration: 0.3, chance: 0.25 }],
+        visual: { shape: 'bolt', color: '#ffe14d', size: 2 },
+    },
+    pet_gust: {
+        id: 'pet_gust', name: 'Hawk Gust', hidden: true,
+        description: 'The Gale Hawk dives with a gust of wind.',
+        behavior: 'projectile', targeting: 'nearest', element: 'wind',
+        baseDamage: 4, elementalDamage: 4, cooldown: 1.4, range: 340, projectileSpeed: 600,
+        targetCount: 1, pierce: 2, knockback: 60, statusEffects: [],
+        visual: { shape: 'crescent', color: '#9ff5dc', size: 6 },
+    },
+    pet_frost: {
+        id: 'pet_frost', name: 'Fox Frost', hidden: true,
+        description: 'The Frost Fox breathes chilling mist.',
+        behavior: 'strike', targeting: 'nearest', element: 'ice',
+        baseDamage: 2, elementalDamage: 6, cooldown: 2.5, range: 260, areaRadius: 50,
+        targetCount: 1, statusEffects: [{ type: 'chill', duration: 2, amount: 0.15, freezeAt: 4, freezeDuration: 1 }],
+        visual: { shape: 'strike', color: '#bfeaff', size: 50 },
     },
 });

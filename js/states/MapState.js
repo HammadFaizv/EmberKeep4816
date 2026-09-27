@@ -17,7 +17,7 @@ export class MapState extends BaseState {
         this.dialogue = null;
         this.ui = this.mount(new MapUI({
             onActivate: (node) => this.activate(node),
-            onOpen: (stateId) => this.game.states.change(stateId),
+            onOpen: (stateId, params) => this.game.states.change(stateId, params),
         }));
         this.refreshUI();
     }
@@ -26,8 +26,14 @@ export class MapState extends BaseState {
         const { profile, items } = this.game;
         this.ui.refresh({
             gold: profile.currency('gold'),
+            souls: profile.currency('souls'),
+            ngPlus: profile.ngPlus,
             items: items.list().filter((i) => i.category !== 'rare' || i.count > 0),
-            features: { spellShop: profile.isFeatureUnlocked('spellShop'), pets: profile.isFeatureUnlocked('pets') },
+            features: {
+                spellShop: profile.isFeatureUnlocked('spellShop'),
+                relicShop: profile.isFeatureUnlocked('relicShop'),
+                pets: profile.isFeatureUnlocked('pets'),
+            },
         });
         this.ui.showNode(this.selected, this.selected ? this.game.worldMap.lockReasons(this.selected) : []);
     }

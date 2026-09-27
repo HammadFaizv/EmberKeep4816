@@ -12,6 +12,9 @@ import { WorldMap } from '../map/WorldMap.js';
 import { UnlockSystem } from '../progression/UnlockSystem.js';
 import { CurrencySystem } from '../progression/CurrencySystem.js';
 import { GoldSystem } from '../progression/GoldSystem.js';
+import { SoulSystem } from '../progression/SoulSystem.js';
+import { RelicSystem } from '../progression/RelicSystem.js';
+import { NewGamePlus } from '../progression/NewGamePlus.js';
 import { ProgressionItemSystem } from '../progression/ProgressionItemSystem.js';
 import { CostSystem } from '../progression/CostSystem.js';
 import { RewardSystem } from '../progression/RewardSystem.js';
@@ -23,9 +26,11 @@ import { SpellFactory } from '../spells/SpellFactory.js';
 import { SpellManager } from '../spells/SpellManager.js';
 import { ShopManager } from '../shops/ShopManager.js';
 import { SpellShop } from '../shops/SpellShop.js';
+import { RelicShop } from '../shops/RelicShop.js';
 import { StageFactory } from '../stages/StageFactory.js';
 import { StageManager } from '../stages/StageManager.js';
 import { Renderer } from '../rendering/Renderer.js';
+import { AssetLoader } from '../assets/AssetLoader.js';
 import { UIManager } from '../ui/UIManager.js';
 
 import { MenuState } from '../states/MenuState.js';
@@ -70,23 +75,28 @@ export class Game {
             bus: this.bus,
         });
         this.profile = new PlayerProgression(this.saveManager);
+        this.input.setBindings(this.profile.data.settings.keyBindings);
         this.worldMap = new WorldMap({ profile: this.profile });
-        this.unlocks = new UnlockSystem({ profile: this.profile, bus: this.bus, worldMap: this.worldMap });
+        this.items = new ProgressionItemSystem({ profile: this.profile, bus: this.bus });
+        this.unlocks = new UnlockSystem({ profile: this.profile, bus: this.bus, worldMap: this.worldMap, items: this.items });
         this.currency = new CurrencySystem({ profile: this.profile, bus: this.bus });
         this.gold = new GoldSystem({ currency: this.currency, bus: this.bus });
-        this.items = new ProgressionItemSystem({ profile: this.profile, bus: this.bus });
+        this.souls = new SoulSystem({ currency: this.currency, bus: this.bus });
         this.costs = new CostSystem({ currency: this.currency, items: this.items });
         this.rewards = new RewardSystem({ currency: this.currency, items: this.items, unlocks: this.unlocks });
         this.upgrades = new UpgradeSystem({ profile: this.profile, costs: this.costs, unlocks: this.unlocks, bus: this.bus });
+        this.relics = new RelicSystem({ profile: this.profile, costs: this.costs, bus: this.bus });
+        this.newGamePlus = new NewGamePlus({ profile: this.profile, unlocks: this.unlocks, worldMap: this.worldMap, bus: this.bus });
         this.pets = new PetManager({
             profile: this.profile,
             costs: this.costs,
             unlocks: this.unlocks,
             factory: new PetFactory(),
-            getPermanentStats: () => this.profile.buildPermanentStats({ upgrades: this.upgrades, includePets: false }),
+            getPermanentStats: () => this.profile.buildPermanentStats({ upgrades: this.upgrades, relics: this.relics, includePets: false }),
         });
         this.shops = new ShopManager()
-            .register(new SpellShop({ profile: this.profile, costs: this.costs, unlocks: this.unlocks, bus: this.bus }));
+            .register(new SpellShop({ profile: this.profile, costs: this.costs, unlocks: this.unlocks, bus: this.bus }))
+            .register(new RelicShop({ relics: this.relics, profile: this.profile }));
 
         // ---- Stage-time services ---------------------------------------------
         this.spellFactory = new SpellFactory();
@@ -102,6 +112,7 @@ export class Game {
 
         // ---- Presentation ----------------------------------------------------
         this.renderer = new Renderer(canvas);
+        this.assets = new AssetLoader({ sprites: this.renderer.sprites, textures: this.renderer.textures, ctx: this.renderer.ctx });
         this.ui = new UIManager(uiRoot, this.bus);
 
         this.states = new StateMachine();
@@ -125,6 +136,7 @@ export class Game {
             input: this.input,
             profile: this.profile,
             upgrades: this.upgrades,
+            relics: this.relics,
             pets: this.pets,
             spellFactory: this.spellFactory,
         };

@@ -163,6 +163,12 @@ export class MapRenderer {
 
     _playerMarker(ctx, p, time) {
         const y = p.y - 34 + Math.sin(time * 4) * 3;
+        const doll = this.renderer.sprites?.get('doll');
+        if (doll) {
+            const scale = 2;
+            ctx.drawImage(doll.frames[0].canvas, p.x - (doll.width * scale) / 2, y - (doll.height * scale) / 2, doll.width * scale, doll.height * scale);
+            return;
+        }
         ctx.fillStyle = '#f1dfc4';
         ctx.beginPath();
         ctx.arc(p.x, y, 7, 0, TAU);

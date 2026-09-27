@@ -11,6 +11,10 @@ import { describeReward } from './StageResultUI.js';
  * It reads data and reports intents (onActivate, onOpen...), nothing more.
  */
 const TYPE_LABELS = { OPEN_FIELD: 'Open Field', DEFENSE: 'Defense', BOSS_ARENA: 'Boss Arena' };
+const SHOP_BLURBS = {
+    spell_shop: 'The witch sells and refines spells here.',
+    relic_shop: 'A hooded merchant trades relics for Souls and boss materials.',
+};
 
 export class MapUI extends UIComponent {
     build() {
@@ -26,14 +30,17 @@ export class MapUI extends UIComponent {
     }
 
     /** Refreshes resources/nav (cheap; called when entering the map or after changes). */
-    refresh({ gold, items, features }) {
+    refresh({ gold, souls, ngPlus, items, features }) {
         const { onOpen } = this.props;
-        this.refs.resources.replaceChildren(
+        this.refs.resources.replaceChildren(...[
+            ngPlus ? el('span', { class: 'tag tag-danger', title: 'New Game+ cycle' }, `NG+${ngPlus}`) : null,
             el('span', { class: 'res-gold' }, `● ${gold}`),
+            souls || features.relicShop ? el('span', { class: 'res-souls', title: 'Souls — spent at the Relic Merchant' }, `✦ ${souls}`) : null,
             ...items.map((i) => el('span', { class: 'res-item', title: i.description }, `${i.name}${i.count > 1 ? ` ×${i.count}` : ''}`)),
-        );
+        ].filter(Boolean));
         this.refs.nav.replaceChildren(...[
-            features.spellShop ? button('Spell Shop', () => onOpen('SHOP'), 'btn btn-small') : null,
+            features.spellShop ? button('Spell Shop', () => onOpen('SHOP', { shopId: 'spell_shop' }), 'btn btn-small') : null,
+            features.relicShop ? button('Relics', () => onOpen('SHOP', { shopId: 'relic_shop' }), 'btn btn-small') : null,
             button('Upgrades', () => onOpen('UPGRADES'), 'btn btn-small'),
             features.pets ? button('Pets', () => onOpen('PETS'), 'btn btn-small') : null,
             button('Menu', () => onOpen('MENU'), 'btn btn-small btn-ghost'),
@@ -71,7 +78,7 @@ export class MapUI extends UIComponent {
         } else if (node.npcId) {
             parts.push(el('p', {}, `${NPCS[node.npcId].name} lives here.`));
         } else if (node.shopId) {
-            parts.push(el('p', {}, 'The witch sells and refines spells here.'));
+            parts.push(el('p', {}, SHOP_BLURBS[node.shopId] ?? 'A merchant waits here.'));
         }
 
         if (!node.unlocked) {

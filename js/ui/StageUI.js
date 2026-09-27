@@ -1,9 +1,12 @@
 import { UIComponent, el, button, formatTime } from './dom.js';
 import { ELEMENTS } from '../config/elementConfig.js';
 
+const STATUS_LABELS = { burn: 'Burning', poison: 'Poisoned', slow: 'Slowed', chill: 'Chilled', freeze: 'Frozen', stun: 'Stunned' };
+
 /**
- * StageUI — in-stage HUD (HP, level/EXP, gold, wave, spells, pause).
- * update(stage) is called every frame and only touches changed values.
+ * StageUI — in-stage HUD (HP, level/EXP, gold, souls, wave, spells, timed
+ * buffs, player statuses, pause). update(stage) is called every frame and
+ * only touches changed values.
  */
 export class StageUI extends UIComponent {
     build() {
@@ -19,12 +22,14 @@ export class StageUI extends UIComponent {
                     r.level = el('span', { class: 'hud-level-badge' }),
                     el('div', { class: 'hud-bar hud-exp' }, [r.expFill = el('div', { class: 'hud-fill' })]),
                 ]),
+                r.buffs = el('div', { class: 'hud-buffs' }),
             ]),
             el('div', { class: 'hud-center' }, [
                 r.stageName = el('div', { class: 'hud-stage-name' }),
                 r.wave = el('div', { class: 'hud-wave' }),
             ]),
             el('div', { class: 'hud-right' }, [
+                r.souls = el('span', { class: 'hud-souls' }),
                 r.gold = el('span', { class: 'hud-gold' }),
                 button('❚❚', () => this.props.onPause(), 'btn btn-icon', { title: 'Pause (Esc)' }),
             ]),
@@ -40,6 +45,8 @@ export class StageUI extends UIComponent {
         this._set(r.level, `Lv ${stage.levels.level}`);
         r.expFill.style.width = `${Math.min(1, stage.levels.progress) * 100}%`;
         this._set(r.gold, `● ${this.props.getGold()}`);
+        const souls = this.props.getSouls?.() ?? 0;
+        this._set(r.souls, souls ? `✦ ${souls}` : '');
         this._set(r.stageName, stage.name);
 
         const sp = stage.spawner;
@@ -49,6 +56,20 @@ export class StageUI extends UIComponent {
             : `Wave ${sp.waveNumber} / ${sp.totalWaves}${timeLeft !== null ? ` · ${formatTime(timeLeft)}` : ' · Boss'}`;
         this._set(r.wave, waveText);
         this._updateSpells(p.spellBook);
+        this._updateBuffs(p);
+    }
+
+    /** Timed card buffs (with remaining seconds) and harmful statuses on the doll. */
+    _updateBuffs(player) {
+        const buffs = player.stats.activeBuffs().map((b) => `${b.label} ${Math.ceil(b.remaining)}s`);
+        const statuses = player.statuses.map((s) => `${STATUS_LABELS[s.type] ?? s.type}${s.stacks > 1 ? ` ×${s.stacks}` : ''}`);
+        const key = buffs.join('|') + '#' + statuses.join('|');
+        if (key === this._buffKey) return;
+        this._buffKey = key;
+        this.refs.buffs.replaceChildren(
+            ...buffs.map((text) => el('span', { class: 'hud-buff' }, text)),
+            ...statuses.map((text) => el('span', { class: 'hud-buff hud-debuff' }, text)),
+        );
     }
 
     _updateSpells(book) {

@@ -57,7 +57,7 @@ export class PetManager {
         for (const id of this.activePets()) EffectRegistry.apply(PETS[id].effects, target, `pet:${id}`);
     }
 
-    createStagePets(owner) {
-        return this.activePets().map((id, i) => this.factory.create(id, owner, i));
+    createStagePets(owner, spellFactory) {
+        return this.activePets().map((id, i) => this.factory.create(id, owner, i, spellFactory));
     }
 }

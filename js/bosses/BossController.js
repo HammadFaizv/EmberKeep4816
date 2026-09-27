@@ -7,6 +7,7 @@ import { AttackState } from './states/AttackState.js';
 import { SpecialAttackState } from './states/SpecialAttackState.js';
 import { PhaseTransitionState } from './states/PhaseTransitionState.js';
 import { StunnedState } from './states/StunnedState.js';
+import { FleeState } from './states/FleeState.js';
 import { DeadState } from './states/DeadState.js';
 
 /**
@@ -18,7 +19,7 @@ import { DeadState } from './states/DeadState.js';
  * `fsm.states`. No existing state needs to change.
  */
 const STATE_CLASSES = new Map(
-    [IdleState, ChaseState, AttackState, SpecialAttackState, PhaseTransitionState, StunnedState, DeadState]
+    [IdleState, ChaseState, AttackState, SpecialAttackState, PhaseTransitionState, StunnedState, FleeState, DeadState]
         .map((cls) => [cls.id, cls]),
 );
 
@@ -28,6 +29,8 @@ export class BossController {
     constructor(boss) {
         this.boss = boss;
         this.burstCount = 0;
+        this.clock = 0;
+        this.lastUsed = new Map(); // attackId -> clock time, for variety
         this.basicCooldown = new Cooldown(boss.def.stats.attackCooldown, true);
         this.cooldowns = new Map(
             Object.entries(boss.attacks)
@@ -36,7 +39,7 @@ export class BossController {
         );
 
         this.machine = new BossStateMachine(boss, this);
-        const ids = boss.fsmConfig.states ?? [...STATE_CLASSES.keys()];
+        const ids = boss.fsmConfig.states ?? [...STATE_CLASSES.keys()].filter((id) => id !== 'FLEE');
         ids.forEach((id) => {
             const cls = STATE_CLASSES.get(id);
             if (cls) this.machine.add(cls);
@@ -48,6 +51,7 @@ export class BossController {
     get cooldownMult() { return this.boss.phase.cooldownMult ?? 1; }
 
     update(dt, ctx) {
+        this.clock += dt;
         this.basicCooldown.update(dt);
         this.cooldowns.forEach((cd) => cd.update(dt));
         if (this.boss.stunImmuneTime > 0) this.boss.stunImmuneTime -= dt;
@@ -56,10 +60,23 @@ export class BossController {
 
     handleEvent(event, data) { this.machine.handleEvent(event, data); }
 
-    /** First special (non-melee) attack in the current phase that is off cooldown. */
+    /**
+     * A special (non-melee) attack from the current phase that is off
+     * cooldown. When several are ready, the least recently used one wins, so
+     * short-cooldown attacks never starve the rest of the moveset.
+     */
     readySpecialAttack() {
-        return this.boss.activeAttackIds.find((id) =>
-            !BossAttacks.isMelee(this.boss, id) && this.cooldowns.get(id)?.ready) ?? null;
+        let best = null;
+        let bestTime = Infinity;
+        for (const id of this.boss.activeAttackIds) {
+            if (BossAttacks.isMelee(this.boss, id) || !this.cooldowns.get(id)?.ready) continue;
+            const used = this.lastUsed.get(id) ?? -1;
+            if (used < bestTime) {
+                best = id;
+                bestTime = used;
+            }
+        }
+        return best;
     }
 
     meleeAttack() {
@@ -68,6 +85,7 @@ export class BossController {
 
     triggerCooldown(attackId) {
         const attack = this.boss.attacks[attackId];
+        this.lastUsed.set(attackId, this.clock);
         if (BossAttacks.isMelee(this.boss, attackId)) {
             this.basicCooldown.trigger(this.boss.def.stats.attackCooldown * this.cooldownMult);
         } else {

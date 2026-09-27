@@ -3,12 +3,13 @@ import { Events } from '../core/EventBus.js';
 /**
  * BossStateMachine — per-boss finite state machine.
  *
- * States: IDLE, CHASE, ATTACK, SPECIAL_ATTACK, PHASE_TRANSITION, STUNNED, DEAD
+ * States: IDLE, CHASE, ATTACK, SPECIAL_ATTACK, PHASE_TRANSITION, STUNNED, FLEE, DEAD
  * (whichever the boss lists in `fsm.states`).
  *
  * Transition sources:
  *   - the active state itself (distance, cooldowns, timers)      -> state.update()
- *   - global rules checked every tick (death, HP phase threshold) -> checkGlobalTransitions()
+ *   - global rules checked every tick (death, HP phase threshold, fleeing)
+ *                                                                 -> checkGlobalTransitions()
  *   - external events (stun from a spell, scripted triggers)      -> handleEvent()
  */
 export class BossStateMachine {
@@ -59,6 +60,10 @@ export class BossStateMachine {
         if (boss.pendingPhase !== null && this.current?.interruptible && this.has('PHASE_TRANSITION')) {
             this.change('PHASE_TRANSITION');
             ctx.bus.emit(Events.BOSS_PHASE_CHANGED, { boss, phase: boss.phases[boss.pendingPhase] });
+            return;
+        }
+        if (this.has('FLEE') && this.currentId !== 'FLEE' && this.current?.interruptible && boss.wantsToFlee()) {
+            this.change('FLEE');
         }
     }
 

@@ -43,7 +43,7 @@
 .story-progress { color: var(--muted); font-size: 14px; min-width: 60px; }
 @keyframes story-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-.settings { text-align: left; min-width: 460px; }
+.settings { text-align: left; min-width: 520px; max-height: 690px; overflow-y: auto; }
 .settings h2, .settings h3 { text-align: center; }
 .setting-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
 .setting-row input[type='range'] { width: 180px; accent-color: var(--accent); }
@@ -55,3 +55,17 @@
 
 .victory { max-width: 680px; }
 .victory p { font-size: 18px; }
+
+.bindings { display: flex; flex-direction: column; gap: 6px; }
+.binding-row { gap: 12px; }
+.binding-row > span:first-child { width: 110px; }
+.binding-keys { flex: 1; display: flex; gap: 6px; }
+kbd {
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 1px 8px;
+    border: 1px solid var(--panel-border);
+    border-bottom-width: 3px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.04);
+}

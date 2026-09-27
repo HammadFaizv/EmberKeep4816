@@ -8,6 +8,8 @@
  *   startingLevel temporary stage level on entry (almost always 0)
  *   rules        player rules merged over the type defaults (see stages/StageRules.js)
  *   environment  visual theme + arena size + optional objective
+ *                + optional `hazards` (stages/ArenaHazards.js: lavaPools, closingRing)
+ *                + optional `lanes` for DEFENSE stages (generated when omitted)
  *   waves        [{ duration, spawns: [{ enemy, count, interval, delay, directions }], boss, miniboss }]
  *                A wave with a boss/miniboss lasts until that boss is defeated.
  *   completion   list of conditions that must ALL be met (see StageRules.js COMPLETION_CONDITIONS)
@@ -177,7 +179,11 @@ export const STAGES = Object.freeze({
         id: 'stage_12', name: 'Soul Wastes',
         description: 'The souls sent before you drifted here. Something is harvesting them.',
         type: 'OPEN_FIELD', difficulty: 6, startingLevel: 0,
-        environment: { theme: 'wastes', ground: '#221f2e', accent: '#2d2940', width: 1800, height: 1200 },
+        environment: {
+            theme: 'wastes', ground: '#221f2e', accent: '#2d2940', width: 1800, height: 1200,
+            // The wastes close in on the doll while the Reaper hunts.
+            hazards: [{ type: 'closingRing', start: 35, duration: 45, minRadius: 0.42, damage: 7 }],
+        },
         waves: [
             { duration: 30, spawns: [spawn('bat', 30, 0.7), spawn('skeleton', 20, 1)] },
             { miniboss: 'soul_reaper', spawns: [spawn('skeleton', 12, 2.5, 4)] },
@@ -208,6 +214,7 @@ export const STAGES = Object.freeze({
             theme: 'lava', ground: '#3a1f18', accent: '#4a271d', width: 1400, height: 2200,
             playerStart: { x: 700, y: 2050 },
             objective: { x: 700, y: 160, radius: 70, label: 'Mountain Path' },
+            hazards: [{ type: 'lavaPools', start: 8, interval: 7, count: 2, radius: 50, damage: 8, duration: 4.5, warmup: 1.3 }],
         },
         waves: [
             { duration: 35, spawns: [spawn('imp', 18, 1.6), spawn('skeleton_knight', 4, 7)] },

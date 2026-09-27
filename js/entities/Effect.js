@@ -6,9 +6,9 @@ import { Entity } from './Entity.js';
  *
  * `kind` selects the painter in rendering/EffectsRenderer.js.
  *
- * TODO: Lingering damage areas (burning ground, poison clouds) should be a
- * separate `Hazard` entity with its own tick damage resolved by CombatSystem,
- * keeping Effect strictly cosmetic.
+ * Lingering damage areas (burning ground, poison clouds) are Hazard entities
+ * (entities/Hazard.js) whose damage CombatSystem resolves, keeping Effect
+ * strictly cosmetic.
  */
 export class Effect extends Entity {
     constructor({ kind, x, y, duration = 0.4, data = {} }) {

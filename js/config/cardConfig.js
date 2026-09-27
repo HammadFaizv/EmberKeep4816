@@ -1,10 +1,11 @@
 /**
  * Level-up card definitions (temporary, per-stage bonuses).
  *
- * Card model: { id, name, description, rarity, type, effects, prerequisites }
+ * Card model: { id, name, description, rarity, type, effects, prerequisites, weight? }
+ *   weight         optional draw weight overriding the rarity weight
  *   effects        applied through progression/EffectRegistry.js
  *   prerequisites  evaluated by progression/CardSystem.js against the running stage
- *   template       optional: expands into one card per spell (see CardSystem generators)
+ *   template       optional: expands into one card per spell / fusion recipe (see CardSystem)
  *                  '{spell}' in name/description is replaced with the spell name.
  *
  * Cards never reference UI code; the UI just renders whatever CardSystem returns.
@@ -60,14 +61,57 @@ export const CARDS = Object.freeze([
         description: '+20% Wind damage.',
         effects: [{ type: 'stat', stat: 'elementDamage.wind', op: 'add', value: 0.2 }],
         prerequisites: [{ type: 'hasSpellWithElement', element: 'wind' }] },
+    { id: 'frostbite', name: 'Frostbite', rarity: 'rare', type: 'element',
+        description: '+20% Ice damage.',
+        effects: [{ type: 'stat', stat: 'elementDamage.ice', op: 'add', value: 0.2 }],
+        prerequisites: [{ type: 'hasSpellWithElement', element: 'ice' }] },
+    { id: 'toxicity', name: 'Toxicity', rarity: 'rare', type: 'element',
+        description: '+20% Poison damage.',
+        effects: [{ type: 'stat', stat: 'elementDamage.poison', op: 'add', value: 0.2 }],
+        prerequisites: [{ type: 'hasSpellWithElement', element: 'poison' }] },
+
+    // ---- Resistances -----------------------------------------------------
+    { id: 'ember_ward', name: 'Ember Ward', rarity: 'common', type: 'resist',
+        description: '+25% Fire resistance.',
+        effects: [{ type: 'stat', stat: 'resist.fire', op: 'add', value: 0.25 }] },
+    { id: 'antidote', name: 'Bitter Antidote', rarity: 'common', type: 'resist',
+        description: '+30% Poison resistance.',
+        effects: [{ type: 'stat', stat: 'resist.poison', op: 'add', value: 0.3 }] },
+    { id: 'warded_seams', name: 'Warded Seams', rarity: 'rare', type: 'resist',
+        description: '+10% resistance to every element.',
+        effects: [{ type: 'stat', stat: 'resist.all', op: 'add', value: 0.1 }] },
 
     // ---- Temporary stage effects -----------------------------------------
     { id: 'second_wind', name: 'Second Wind', rarity: 'epic', type: 'stageEffect',
         description: 'Fully restore HP.',
         effects: [{ type: 'heal', amount: 'full' }] },
-    // TODO: Timed stage effects (e.g. "Frenzy: +50% attack speed for 20s") need a
-    // `timedStat` effect handler in EffectRegistry that registers an expiring
-    // modifier with PlayerStats (source + remaining time, ticked by Player.update).
+    // Timed buffs: `timedStat` modifiers expire on their own (PlayerStats.tick).
+    { id: 'frenzy', name: 'Frenzy', rarity: 'epic', type: 'buff',
+        description: '+50% attack speed for 20 seconds.',
+        effects: [{ type: 'timedStat', stat: 'attackSpeedMult', value: 0.5, duration: 20, label: 'Frenzy' }] },
+    { id: 'war_cry', name: 'War Cry', rarity: 'rare', type: 'buff',
+        description: '+35% spell damage for 15 seconds.',
+        effects: [{ type: 'timedStat', stat: 'damageMult', value: 0.35, duration: 15, label: 'War Cry' }] },
+    { id: 'sprint', name: 'Sprint', rarity: 'common', type: 'buff',
+        description: '+40% movement speed for 12 seconds.',
+        effects: [{ type: 'timedStat', stat: 'moveSpeed', op: 'mul', value: 1.4, duration: 12, label: 'Sprint' }],
+        prerequisites: [{ type: 'canMove' }] },
+    { id: 'stone_skin', name: 'Stone Skin', rarity: 'rare', type: 'buff',
+        description: '+15 defense and +20% resistances for 20 seconds.',
+        effects: [
+            { type: 'timedStat', stat: 'defense', value: 15, duration: 20, label: 'Stone Skin' },
+            { type: 'timedStat', stat: 'resist.all', value: 0.2, duration: 20, label: 'Stone Skin' },
+        ] },
+
+    // ---- Defense stage structures -------------------------------------------
+    { id: 'build_barricade', name: 'Raise Barricade', rarity: 'common', type: 'structure',
+        description: 'Blocks a lane. Enemies must break through it before reaching you.',
+        effects: [{ type: 'buildStructure', structure: 'barricade' }],
+        prerequisites: [{ type: 'stageType', stageType: 'DEFENSE' }, { type: 'freeBuildSlot', kind: 'lane' }] },
+    { id: 'build_tower', name: 'Arrow Tower', rarity: 'rare', type: 'structure',
+        description: 'Builds a tower that shoots enemies using your spell damage bonuses.',
+        effects: [{ type: 'buildStructure', structure: 'arrow_tower' }],
+        prerequisites: [{ type: 'stageType', stageType: 'DEFENSE' }, { type: 'freeBuildSlot', kind: 'side' }] },
 
     // ---- Spell cards (templates expanded per spell by CardSystem) ----------
     { id: 'new_spell', template: 'perAvailableSpell', name: 'Learn: {spell}', rarity: 'rare', type: 'spell',
@@ -86,4 +130,10 @@ export const CARDS = Object.freeze([
     { id: 'multiply_spell', template: 'perEquippedSpell', name: 'Split: {spell}', rarity: 'epic', type: 'spellMod',
         description: '{spell} hits +1 additional target.',
         effects: [{ type: 'spellMod', stat: 'targetCount', op: 'add', value: 1 }] },
+
+    // ---- Spell fusion (feature 'spellFusion'; recipes in fusionConfig.js) -----
+    { id: 'fuse', template: 'perFusionRecipe', name: 'Fuse: {spell}', rarity: 'legendary', type: 'fusion', weight: 50,
+        description: 'Merge {parts} into one spell. Frees a spell slot.',
+        effects: [],
+        prerequisites: [{ type: 'featureUnlocked', id: 'spellFusion' }] },
 ]);

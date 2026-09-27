@@ -8,8 +8,11 @@ import { DamageSystem } from '../combat/DamageSystem.js';
 import { StatusEffectSystem } from '../combat/StatusEffectSystem.js';
 import { TargetingSystem } from '../combat/TargetingSystem.js';
 import { CombatSystem } from '../combat/CombatSystem.js';
+import { ComboSystem } from '../combat/ComboSystem.js';
 import { EnemySpawner } from '../enemies/EnemySpawner.js';
 import { EnemyFactory } from '../entities/EnemyFactory.js';
+import { Projectile } from '../entities/Projectile.js';
+import { ArenaHazards } from './ArenaHazards.js';
 import { resolveRules, resolveScaling, CompletionConditions } from './StageRules.js';
 import { GAME_CONFIG } from '../config/gameConfig.js';
 
@@ -22,7 +25,8 @@ import { GAME_CONFIG } from '../config/gameConfig.js';
  *
  * The Stage also acts as the *context object* (`ctx`) passed to entities,
  * spells and AI: ctx.player, ctx.enemies, ctx.combat, ctx.targeting,
- * ctx.spawnProjectile(), ctx.spawnEnemy(), ctx.rules, ctx.world, ctx.bus...
+ * ctx.spawnProjectile(), ctx.spawnEnemy(), ctx.spawnHazard(), ctx.rules,
+ * ctx.world, ctx.bus...
  *
  * Subclasses customise via hooks, not by copying update():
  *   static type / static defaultRules
@@ -30,6 +34,7 @@ import { GAME_CONFIG } from '../config/gameConfig.js';
  *   getPlayerStart()        where the doll starts
  *   getSpawnPosition(opts)  where regular enemies appear
  *   getBossSpawnPosition()  where bosses appear
+ *   onEnemySpawned(enemy, spawnInfo)  e.g. assign a lane
  *   onInit() / onUpdate(dt) extra per-type logic
  */
 export class Stage {
@@ -49,8 +54,9 @@ export class Stage {
         this.rng = services.rng;
         this.input = services.input;
 
+        this.ngPlus = services.profile.data.story.ngPlus ?? 0;
         this.rules = resolveRules(this.constructor.defaultRules, def.rules);
-        this.scaling = resolveScaling(def);
+        this.scaling = resolveScaling(def, this.ngPlus);
         this.environment = { ...def.environment };
         this.world = this.createWorld();
         this.showDamageNumbers = services.profile.data.settings.showDamageNumbers;
@@ -60,6 +66,9 @@ export class Stage {
         this.effects = [];
         this.pickups = [];
         this.pets = [];
+        this.hazards = [];
+        this.structures = [];
+        this.arenaRing = null;
 
         this.elapsed = 0;
         this.status = 'running';     // 'running' | 'won' | 'complete' | 'failed'
@@ -68,46 +77,53 @@ export class Stage {
         this.loot = [];              // persistent rewards collected this attempt (rare drops)
         this.pendingLevelUps = 0;
         this.activeBoss = null;
-        this.stats = { kills: 0, goldCollected: 0 };
+        this.stats = { kills: 0, goldCollected: 0, soulsCollected: 0, combos: 0 };
         this.subs = new Subscriptions(this.bus);
         this.enemyFactory = new EnemyFactory();
     }
 
     // ---- Lifecycle ---------------------------------------------------------
     init() {
-        const { profile, upgrades, pets, spellFactory } = this.services;
+        const { profile, upgrades, pets, relics, spellFactory } = this.services;
 
-        const stats = profile.buildPermanentStats({ upgrades, pets, includePets: this.rules.allowPets });
+        const stats = profile.buildPermanentStats({ upgrades, pets, relics, includePets: this.rules.allowPets });
         const start = this.getPlayerStart();
         this.player = new Player({ x: start.x, y: start.y, stats });
         this.player.spellBook = new SpellBook({ owner: this.player, spellFactory, profile });
-        if (this.rules.allowPets) this.pets = pets.createStagePets(this.player);
+        if (this.rules.allowPets) this.pets = pets.createStagePets(this.player, spellFactory);
 
         this.levels = new LevelSystem({ bus: this.bus, startingLevel: this.def.startingLevel ?? 0 });
-        this.experience = new ExperienceSystem({ bus: this.bus, subscriptions: this.subs, levels: this.levels, player: this.player });
+        this.experience = new ExperienceSystem({ bus: this.bus, subscriptions: this.subs, levels: this.levels, player: this.player, stage: this });
 
         this.elements = new ElementSystem();
         this.damage = new DamageSystem({ elements: this.elements });
         this.statuses = new StatusEffectSystem({ rng: this.rng });
         this.targeting = new TargetingSystem(this);
-        this.combat = new CombatSystem({ stage: this, bus: this.bus, rng: this.rng, damage: this.damage, statuses: this.statuses });
+        this.combos = new ComboSystem({ enabled: profile.isFeatureUnlocked('spellCombos'), statuses: this.statuses, stage: this, bus: this.bus });
+        this.combat = new CombatSystem({ stage: this, bus: this.bus, rng: this.rng, damage: this.damage, statuses: this.statuses, combos: this.combos });
         this.spawner = new EnemySpawner({ stage: this, waves: this.def.waves, scaling: this.scaling, bus: this.bus });
+        this.arenaHazards = new ArenaHazards(this, this.environment.hazards);
 
         this.subs
             .on(Events.ENEMY_KILLED, () => { this.stats.kills += 1; })
             .on(Events.GOLD_COLLECTED, ({ amount }) => { this.stats.goldCollected += amount; })
+            .on(Events.SOULS_COLLECTED, ({ amount }) => { this.stats.soulsCollected += amount; })
+            .on(Events.COMBO_TRIGGERED, () => { this.stats.combos += 1; })
             .on(Events.LEVEL_UP, () => { this.pendingLevelUps += 1; })
             .on(Events.BOSS_DEFEATED, ({ boss }) => this._recordBoss(boss))
             .on(Events.MINIBOSS_DEFEATED, ({ boss }) => this._recordBoss(boss))
             .on(Events.PLAYER_DIED, () => this.fail());
 
         this.onInit();
+        this.targeting.rebuild();
         this.bus.emit(Events.STAGE_STARTED, { stage: this });
         return this;
     }
 
     destroy() {
         this.subs.clear();
+        for (const p of this.projectiles) Projectile.release(p);
+        this.projectiles = [];
     }
 
     // ---- Hooks for subclasses ---------------------------------------------
@@ -128,6 +144,7 @@ export class Stage {
         return { x: p.x, y: Math.max(80, p.y - 320) };
     }
 
+    onEnemySpawned(enemy, spawnInfo) {}
     onInit() {}
     onUpdate(dt) {}
 
@@ -139,14 +156,18 @@ export class Stage {
         this.player.update(dt, this);
         if (this.status === 'running') this.spawner.update(dt);
         for (const e of this.enemies) e.update(dt, this);
-        this.statuses.update(dt, this.enemies, this);
+        this.targeting.rebuild();
+        this._separateEnemies();
+        this.statuses.update(dt, this.player.alive ? [...this.enemies, this.player] : this.enemies);
         for (const p of this.projectiles) p.update(dt, this);
+        for (const s of this.structures) s.update(dt, this);
+        for (const h of this.hazards) h.update(dt, this);
         this.combat.update(dt);
         for (const p of this.pickups) p.update(dt, this);
         for (const p of this.pets) p.update(dt, this);
         for (const e of this.effects) e.update(dt, this);
+        this.arenaHazards.update(dt);
 
-        this._separateEnemies();
         this._cleanup();
         this.onUpdate(dt);
         this._checkCompletion(dt);
@@ -154,9 +175,11 @@ export class Stage {
 
     // ---- Spawning (called by spawner, AI, spells, bosses) ------------------
     spawnEnemy(id, { x, y, directions } = {}) {
-        const pos = x !== undefined ? { x, y } : this.getSpawnPosition({ directions });
-        const enemy = this.enemyFactory.create(id, { ...pos, scaling: this.scaling });
+        const spawnInfo = x !== undefined ? { x, y } : this.getSpawnPosition({ directions });
+        const enemy = this.enemyFactory.create(id, { x: spawnInfo.x, y: spawnInfo.y, scaling: this.scaling });
         this.enemies.push(enemy);
+        this.targeting?.track(enemy);
+        this.onEnemySpawned(enemy, spawnInfo);
         this.bus.emit(Events.ENEMY_SPAWNED, { enemy });
         return enemy;
     }
@@ -171,6 +194,8 @@ export class Stage {
     spawnProjectile(p) { this.projectiles.push(p); }
     spawnEffect(e) { this.effects.push(e); }
     spawnPickup(p) { this.pickups.push(p); }
+    spawnHazard(h) { this.hazards.push(h); }
+    addStructure(s) { this.structures.push(s); }
     addLoot(reward) { this.loot.push(reward); }
 
     // ---- Outcome -----------------------------------------------------------
@@ -201,22 +226,27 @@ export class Stage {
 
     _cleanup() {
         this.enemies = this.enemies.filter((e) => e.alive);
-        this.projectiles = this.projectiles.filter((p) => p.alive && this._inBounds(p.pos, 200));
+        const kept = [];
+        for (const p of this.projectiles) {
+            if (p.alive && this._inBounds(p.pos, 200)) kept.push(p);
+            else Projectile.release(p);
+        }
+        this.projectiles = kept;
         this.effects = this.effects.filter((e) => e.alive);
         this.pickups = this.pickups.filter((p) => p.alive);
+        this.hazards = this.hazards.filter((h) => h.alive);
+        this.structures = this.structures.filter((s) => s.alive);
     }
 
     _inBounds(pos, margin) {
         return pos.x > -margin && pos.y > -margin && pos.x < this.world.width + margin && pos.y < this.world.height + margin;
     }
 
-    /** Cheap pairwise push so crowds don't collapse into a single point. */
+    /** Pushes overlapping enemies apart so crowds don't collapse into a point (spatial-hash neighbours only). */
     _separateEnemies() {
-        const list = this.enemies;
-        for (let i = 0; i < list.length; i++) {
-            const a = list[i];
-            for (let j = i + 1; j < list.length; j++) {
-                const b = list[j];
+        for (const a of this.enemies) {
+            for (const b of this.targeting.query(a.pos, a.radius + 50)) {
+                if (b.id <= a.id) continue; // each pair once
                 const dx = b.pos.x - a.pos.x;
                 const dy = b.pos.y - a.pos.y;
                 const min = a.radius + b.radius;

@@ -2,6 +2,9 @@ import { Vector2 } from '../utils/Vector2.js';
 
 let nextEntityId = 1;
 
+/** Fresh unique id (also used when pooled entities are recycled). */
+export function allocateEntityId() { return nextEntityId++; }
+
 /**
  * Entity — anything that exists in a stage: position, collision radius, team,
  * and a render descriptor. Entities hold DATA and simple self-updates only;
@@ -12,7 +15,7 @@ let nextEntityId = 1;
  */
 export class Entity {
     constructor({ x = 0, y = 0, radius = 10, team = 'neutral', render = null } = {}) {
-        this.id = nextEntityId++;
+        this.id = allocateEntityId();
         this.pos = new Vector2(x, y);
         this.vel = new Vector2();
         this.radius = radius;
@@ -44,6 +47,7 @@ export class Combatant extends Entity {
         this.statuses = [];     // managed by StatusEffectSystem
         this.moveMult = 1;      // recalculated each tick by StatusEffectSystem
         this.stunned = false;
+        this.frozen = false;    // set by the 'freeze' status (rendering + AI)
         this.flashTime = 0;     // hit flash for rendering
         this.resistances = {};
         this.immunities = [];

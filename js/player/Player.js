@@ -1,34 +1,45 @@
 import { Combatant } from '../entities/Entity.js';
 import { clamp } from '../utils/MathUtils.js';
+import { ELEMENTAL_IDS } from '../config/elementConfig.js';
+import { GAME_CONFIG } from '../config/gameConfig.js';
+import { Events } from '../core/EventBus.js';
 
 /**
  * Player — the possessed doll inside a stage.
  *
- * Holds the stage's PlayerStats (permanent upgrades + pets + temporary cards)
- * and the stage SpellBook. Movement obeys stage rules (DEFENSE stages lock
- * movement). Spells fire automatically through the SpellBook.
+ * Holds the stage's PlayerStats (permanent upgrades + pets + relics + temporary
+ * cards) and the stage SpellBook. Movement obeys stage rules (DEFENSE stages
+ * lock movement). Spells fire automatically through the SpellBook.
+ *
+ * Elemental resistances come from `resist.<element>` stats (upgrades, relics,
+ * pets, cards) and are mirrored into `resistances`, so ElementSystem treats
+ * the player exactly like any other target.
  */
 export class Player extends Combatant {
     constructor({ x, y, stats }) {
-        super({ x, y, radius: stats.get('radius'), team: 'player', render: { shape: 'doll', color: '#f1dfc4' } });
+        super({ x, y, radius: stats.get('radius'), team: 'player', render: { shape: 'doll', sprite: 'doll', color: '#f1dfc4' } });
         this.stats = stats;
         this.hp = this.maxHp;
         this.spellBook = null;
         this.invulnerableTime = 0;
         this.facing = 1;
-        this.resistances = {};
-        // TODO: Player elemental resistances (from armor/pets/cards) should be read
-        // from stats keys `resist.<element>` here so ElementSystem treats the
-        // player exactly like an enemy target.
+        this.refreshResistances();
     }
 
     get maxHp() { return this.stats.get('maxHp'); }
     get defense() { return this.stats.get('defense'); }
     get moveSpeed() { return this.stats.get('moveSpeed') * this.moveMult; }
 
-    /** Call after stat modifiers change (cards) to keep HP consistent. */
+    /** Call after stat modifiers change (cards, buffs) to keep derived values consistent. */
     onStatsChanged() {
         this.hp = Math.min(this.hp, this.maxHp);
+        this.refreshResistances();
+    }
+
+    refreshResistances() {
+        const cap = GAME_CONFIG.limits.maxPlayerResistance;
+        const all = this.stats.get('resist.all');
+        this.resistances = Object.fromEntries(ELEMENTAL_IDS.map((id) => [id, Math.min(cap, all + this.stats.get(`resist.${id}`))]));
     }
 
     takeDamage(amount) {
@@ -40,6 +51,12 @@ export class Player extends Combatant {
     update(dt, ctx) {
         super.update(dt, ctx);
         if (this.invulnerableTime > 0) this.invulnerableTime -= dt;
+
+        const expired = this.stats.tick(dt);
+        if (expired) {
+            this.onStatsChanged();
+            expired.forEach((label) => ctx.bus.emit(Events.BUFF_EXPIRED, { label }));
+        }
 
         if (ctx.rules.canMove && !this.stunned) {
             const axis = ctx.input.getMoveAxis();

@@ -1,22 +1,38 @@
 /**
  * InputManager — normalises keyboard and mouse input.
  *
- * Gameplay code asks for *actions* ("moveUp", "pause") rather than raw keys, so
- * rebinding (SettingsUI TODO) only needs to change the bindings table.
+ * Gameplay code asks for *actions* ("moveUp", "pause") rather than raw keys.
+ * Rebinding (Settings screen) only changes the bindings table: overrides are
+ * stored in profile.settings.keyBindings and applied with setBindings().
  */
-const DEFAULT_BINDINGS = {
+export const DEFAULT_BINDINGS = Object.freeze({
     moveUp: ['KeyW', 'ArrowUp'],
     moveDown: ['KeyS', 'ArrowDown'],
     moveLeft: ['KeyA', 'ArrowLeft'],
     moveRight: ['KeyD', 'ArrowRight'],
     pause: ['Escape', 'KeyP'],
     confirm: ['Enter', 'Space'],
-};
+});
+
+/** Player-facing names of rebindable actions (Settings screen). */
+export const ACTION_LABELS = Object.freeze({
+    moveUp: 'Move up',
+    moveDown: 'Move down',
+    moveLeft: 'Move left',
+    moveRight: 'Move right',
+    pause: 'Pause',
+    confirm: 'Confirm',
+});
+
+/** Short, readable label for a KeyboardEvent.code ('KeyW' -> 'W'). */
+export function keyLabel(code) {
+    return code.replace(/^(Key|Digit)/, '').replace(/^Arrow/, 'Arrow ');
+}
 
 export class InputManager {
     constructor(canvas, bindings = DEFAULT_BINDINGS) {
         this.canvas = canvas;
-        this.bindings = bindings;
+        this.bindings = { ...bindings };
         this.down = new Set();
         this.pressed = new Set();
         this.mouse = { x: 0, y: 0, clicked: false, inside: false };
@@ -35,6 +51,21 @@ export class InputManager {
             this._updateMouse(e);
             this.mouse.clicked = true;
         });
+    }
+
+    /**
+     * Applies binding overrides on top of the defaults. Each override replaces
+     * the action's PRIMARY key; secondary defaults (arrows, P) stay available
+     * unless another action now uses them.
+     */
+    setBindings(overrides = {}) {
+        const taken = new Set(Object.values(overrides).flat());
+        this.bindings = Object.fromEntries(Object.entries(DEFAULT_BINDINGS).map(([action, keys]) => {
+            const custom = overrides[action];
+            if (!custom?.length) return [action, keys.filter((k) => !taken.has(k))];
+            return [action, [...custom, ...keys.slice(1).filter((k) => !taken.has(k))]];
+        }));
+        this.down.clear();
     }
 
     isDown(action) { return this.bindings[action]?.some((code) => this.down.has(code)) ?? false; }

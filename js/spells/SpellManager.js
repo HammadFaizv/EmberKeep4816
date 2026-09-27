@@ -7,6 +7,9 @@ import { SPELLS } from '../config/spellConfig.js';
  *   UNLOCKED  -> profile.data.unlockedSpells
  *   AVAILABLE -> unlocked spells allowed by the stage rules (bannedSpells/allowedSpells)
  *   EQUIPPED  -> the stage SpellBook (see player/SpellBook.js)
+ *
+ * Fused spells (created by fusion cards) and hidden spells (towers, pets) are
+ * never offered.
  */
 export class SpellManager {
     constructor({ profile, rng }) {
@@ -17,6 +20,7 @@ export class SpellManager {
     getAvailableStageSpells(rules = {}) {
         return this.profile.data.unlockedSpells.filter((id) =>
             SPELLS[id]
+            && !SPELLS[id].fused && !SPELLS[id].hidden
             && !(rules.bannedSpells ?? []).includes(id)
             && (!rules.allowedSpells || rules.allowedSpells.includes(id)));
     }
