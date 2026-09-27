@@ -1,0 +1,171 @@
+/* ==========================================================================
+   Base layout, theme tokens and shared components (buttons, panels, toasts).
+   The game renders in a fixed 1280×720 container scaled to the window by
+   main.js, so all UI sizes here are in game pixels.
+   ========================================================================== */
+:root {
+    --bg: #0b0a10;
+    --panel: rgba(22, 17, 20, 0.94);
+    --panel-border: #5a4632;
+    --text: #f3e3c3;
+    --muted: #a8998a;
+    --accent: #e0a045;
+    --accent-strong: #ff8a3d;
+    --danger: #c0392b;
+    --ok: #6fd39a;
+    --warn: #f0b35a;
+    --font: Georgia, 'Times New Roman', serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    color: var(--text);
+    font-family: var(--font);
+}
+
+#game-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1280px;
+    height: 720px;
+    transform-origin: center;
+    background: var(--bg);
+    overflow: hidden;
+}
+
+#game-canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#ui-root, .ui-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.ui-layer > * { pointer-events: auto; }
+.hidden { display: none !important; }
+
+/* ---- Text helpers ------------------------------------------------------- */
+h1, h2, h3 { margin: 0 0 0.4em; font-weight: normal; letter-spacing: 0.02em; }
+p { margin: 0 0 0.6em; line-height: 1.45; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.ok { color: var(--ok); }
+.warn { color: var(--warn); }
+
+/* ---- Buttons ------------------------------------------------------------ */
+.btn {
+    font-family: var(--font);
+    font-size: 15px;
+    color: var(--text);
+    background: linear-gradient(#3a2d24, #251c17);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 8px 18px;
+    cursor: pointer;
+    transition: transform 0.08s, border-color 0.15s, background 0.15s;
+}
+.btn:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-1px); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: linear-gradient(#a8622a, #6e3a18); border-color: #d08a45; }
+.btn-danger { background: linear-gradient(#7a2a22, #4a1612); border-color: #b3483c; }
+.btn-ghost { background: transparent; }
+.btn-large { font-size: 20px; padding: 12px 36px; min-width: 260px; }
+.btn-small { font-size: 13px; padding: 5px 12px; }
+.btn-icon { padding: 4px 10px; font-size: 13px; }
+
+/* ---- Panels / modals ---------------------------------------------------- */
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 220, 160, 0.05);
+    padding: 20px 24px;
+}
+
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5, 3, 6, 0.6);
+    animation: fade-in 0.2s ease-out;
+}
+
+.modal {
+    min-width: 380px;
+    max-width: 620px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.screen-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+.screen-header h2 { margin: 0; flex: 1; font-size: 28px; }
+
+.tag {
+    display: inline-block;
+    font-size: 12px;
+    padding: 1px 8px;
+    margin-right: 4px;
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    color: var(--muted);
+}
+.tag-danger { color: #ff8a7a; border-color: #7a2a22; }
+.res-gold { color: #f5c542; font-weight: bold; }
+.cost { color: #f5c542; font-size: 14px; }
+
+/* ---- Toasts ------------------------------------------------------------- */
+.ui-toasts {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: 64px 16px 0 0;
+    gap: 6px;
+}
+.toast {
+    pointer-events: none;
+    background: rgba(20, 14, 16, 0.92);
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 14px;
+    max-width: 360px;
+    animation: toast-in 0.3s ease-out;
+    transition: opacity 0.5s, transform 0.5s;
+}
+.toast-item { border-color: #7fe3ff; }
+.toast-path { border-color: #d8b25c; }
+.toast-spell { border-color: #b66cff; }
+.toast-out { opacity: 0; transform: translateY(-10px); }
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes toast-in { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }

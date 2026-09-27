@@ -1,0 +1,1466 @@
+```text
+You are a senior game architect and JavaScript game developer.
+
+Build the initial architecture and boilerplate for a browser-based 2D roguelike action game using:
+
+- HTML
+- CSS
+- Vanilla JavaScript
+- HTML5 Canvas
+- No external libraries
+- No external assets for now
+
+IMPORTANT:
+This task is primarily about creating a ROBUST, MODULAR, EXTENSIBLE GAME ARCHITECTURE.
+
+Do not attempt to fully implement every gameplay mechanic yet.
+
+Most systems should initially contain clean boilerplate, interfaces, placeholder methods, configuration objects, and TODO comments explaining exactly where future gameplay logic belongs.
+
+The architecture must make it easy to add new:
+- stages
+- stage types
+- enemies
+- bosses
+- spells
+- elements
+- pets
+- cards
+- currencies
+- progression items
+- upgrade nodes
+- NPCs
+- shops
+- boss mechanics
+- game systems
+
+without rewriting the existing architecture.
+
+==================================================
+1. GAME CONCEPT
+==================================================
+
+Create a roguelike stage-based adventure game.
+
+The player is a lost soul possessing a small human-sized doll in a medieval magical world that has been corrupted by souls.
+
+A witch has been reviving lost souls and placing them inside dolls so they can fight their way north toward the Demon Lord responsible for the corruption.
+
+The player is the:
+
+4816th revived soul.
+
+The journey begins at a small hut in the bottom-left corner of the world.
+
+The ultimate objective is to travel north through a dangerous world, unlocking paths and progression items, until the player reaches the Lava Mountains and eventually confronts the final Demon Lord.
+
+The game should initially be designed around approximately 15 stages.
+
+==================================================
+2. GAME LORE / INTRODUCTION
+==================================================
+
+Create an introductory story sequence after pressing PLAY.
+
+Use the following lore as the foundation:
+
+"You do not remember your name.
+
+You do not remember your death.
+
+You only remember waking in darkness.
+
+A strange witch stood over you, holding a tiny human-shaped doll.
+
+She told you that your soul was not the first.
+
+Nor the hundredth.
+
+You were the 4816th.
+
+For years, the witch has been gathering lost souls and placing them inside dolls, sending them north toward a land consumed by corruption.
+
+Something has awakened in the north.
+
+The Demon Lord.
+
+His arrival twisted the land, corrupted the dead, and filled the world with creatures born from broken souls.
+
+Every soul she sent before you eventually disappeared.
+
+Now it is your turn.
+
+The witch gives you the doll.
+
+'Go north,' she whispers.
+
+'Find out what happened to the others.'
+
+Your journey begins at a forgotten hut at the edge of the world."
+
+Keep the introduction short enough that it does not interfere with gameplay.
+
+==================================================
+3. MAIN GAME FLOW
+==================================================
+
+Implement the following high-level state flow:
+
+MAIN MENU
+    ↓
+LORE / INTRO
+    ↓
+WORLD MAP
+    ↓
+STAGE
+    ↓
+STAGE COMPLETE
+    ↓
+WORLD MAP
+    ↓
+NEXT STAGE
+    ↓
+...
+    ↓
+FINAL BOSS
+
+The game should use a global finite state machine for major game states.
+
+Example:
+
+GameState:
+- MENU
+- INTRO
+- MAP
+- STAGE_LOADING
+- PLAYING
+- LEVEL_UP
+- STAGE_COMPLETE
+- STAGE_DEFEAT
+- SHOP
+- UPGRADES
+- PAUSED
+- FINAL_BOSS
+- VICTORY
+
+Keep this extensible.
+
+==================================================
+4. PROJECT STRUCTURE
+==================================================
+
+Create a modular project structure similar to:
+
+/
+├── index.html
+├── css/
+│   ├── main.css
+│   ├── menu.css
+│   ├── map.css
+│   ├── stage.css
+│   ├── cards.css
+│   ├── shop.css
+│   └── upgrades.css
+│
+├── js/
+│   ├── main.js
+│   │
+│   ├── core/
+│   │   ├── Game.js
+│   │   ├── GameLoop.js
+│   │   ├── GameState.js
+│   │   ├── StateMachine.js
+│   │   ├── InputManager.js
+│   │   ├── EventBus.js
+│   │   └── SaveManager.js
+│   │
+│   ├── config/
+│   │   ├── gameConfig.js
+│   │   ├── stageConfig.js
+│   │   ├── spellConfig.js
+│   │   ├── enemyConfig.js
+│   │   ├── bossConfig.js
+│   │   ├── petConfig.js
+│   │   ├── cardConfig.js
+│   │   └── upgradeConfig.js
+│   │
+│   ├── player/
+│   │   ├── Player.js
+│   │   ├── PlayerStats.js
+│   │   ├── PlayerProgression.js
+│   │   └── SpellBook.js
+│   │
+│   ├── stages/
+│   │   ├── Stage.js
+│   │   ├── StageManager.js
+│   │   ├── StageFactory.js
+│   │   ├── StageRegistry.js
+│   │   ├── OpenFieldStage.js
+│   │   ├── DefenseStage.js
+│   │   └── StageRules.js
+│   │
+│   ├── map/
+│   │   ├── WorldMap.js
+│   │   ├── MapNode.js
+│   │   ├── MapConnection.js
+│   │   ├── MapRequirement.js
+│   │   └── ProgressionGate.js
+│   │
+│   ├── entities/
+│   │   ├── Entity.js
+│   │   ├── Enemy.js
+│   │   ├── EnemyFactory.js
+│   │   ├── Boss.js
+│   │   ├── MiniBoss.js
+│   │   ├── Projectile.js
+│   │   └── Effect.js
+│   │
+│   ├── enemies/
+│   │   ├── EnemyAI.js
+│   │   ├── EnemyRegistry.js
+│   │   ├── EnemySpawner.js
+│   │   └── behaviors/
+│   │
+│   ├── bosses/
+│   │   ├── BossController.js
+│   │   ├── BossStateMachine.js
+│   │   ├── BossState.js
+│   │   └── states/
+│   │       ├── IdleState.js
+│   │       ├── ChaseState.js
+│   │       ├── AttackState.js
+│   │       ├── SpecialAttackState.js
+│   │       ├── StunnedState.js
+│   │       └── DeadState.js
+│   │
+│   ├── combat/
+│   │   ├── CombatSystem.js
+│   │   ├── DamageSystem.js
+│   │   ├── TargetingSystem.js
+│   │   ├── ElementSystem.js
+│   │   └── StatusEffectSystem.js
+│   │
+│   ├── spells/
+│   │   ├── Spell.js
+│   │   ├── SpellFactory.js
+│   │   ├── SpellManager.js
+│   │   ├── SpellEffects.js
+│   │   └── SpellTargeting.js
+│   │
+│   ├── progression/
+│   │   ├── ExperienceSystem.js
+│   │   ├── LevelSystem.js
+│   │   ├── CardSystem.js
+│   │   ├── GoldSystem.js
+│   │   ├── UpgradeSystem.js
+│   │   ├── ProgressionItemSystem.js
+│   │   └── UnlockSystem.js
+│   │
+│   ├── pets/
+│   │   ├── Pet.js
+│   │   ├── PetManager.js
+│   │   └── PetFactory.js
+│   │
+│   ├── shops/
+│   │   ├── SpellShop.js
+│   │   ├── ShopItem.js
+│   │   └── ShopManager.js
+│   │
+│   ├── rendering/
+│   │   ├── Renderer.js
+│   │   ├── MapRenderer.js
+│   │   ├── StageRenderer.js
+│   │   ├── EntityRenderer.js
+│   │   ├── SpellRenderer.js
+│   │   ├── EffectsRenderer.js
+│   │   └── UIOverlayRenderer.js
+│   │
+│   ├── ui/
+│   │   ├── UIManager.js
+│   │   ├── MainMenu.js
+│   │   ├── StoryScreen.js
+│   │   ├── MapUI.js
+│   │   ├── StageUI.js
+│   │   ├── LevelUpUI.js
+│   │   ├── CardSelectionUI.js
+│   │   ├── ShopUI.js
+│   │   ├── UpgradeTreeUI.js
+│   │   └── SettingsUI.js
+│   │
+│   └── utils/
+│       ├── Vector2.js
+│       ├── Timer.js
+│       ├── Random.js
+│       ├── MathUtils.js
+│       └── ObjectPool.js
+│
+└── README.md
+
+Use ES modules.
+
+==================================================
+5. WORLD MAP
+==================================================
+
+The world map is a stage graph rather than simply a linear list.
+
+The player begins at the bottom-left.
+
+Only the first stage is initially unlocked.
+
+Stages can have:
+
+- one next stage
+- multiple branches
+- locked paths
+- progression requirements
+- optional stages
+- miniboss stages
+- major boss stages
+- shops
+- NPC locations
+- special locations
+
+Example progression:
+
+              NORTH
+                ↑
+          [Lava Mountains]
+                ↑
+           [Final Boss]
+                ↑
+       ┌────────┴────────┐
+       │                 │
+    [Stage]           [Stage]
+       │                 │
+       └───────┬─────────┘
+               │
+            [Stage]
+               │
+          [Starting Area]
+               │
+          [Player Hut]
+
+Do NOT hardcode map progression into individual stage classes.
+
+Represent the map as data.
+
+Each MapNode should support:
+
+- id
+- name
+- position
+- stageId
+- type
+- unlocked
+- completed
+- prerequisites
+- connections
+- rewards
+- specialRequirements
+
+==================================================
+6. PROGRESSION GATES
+==================================================
+
+Support world obstacles that require completing other stages or obtaining special items.
+
+Examples:
+
+BROKEN BRIDGE:
+
+The player cannot travel north.
+
+Requirement:
+
+Defeat an eastern miniboss.
+
+Reward:
+
+Bridge Logs.
+
+Once the player obtains Bridge Logs:
+
+The northern bridge becomes available.
+
+Another example:
+
+LOCKED GATE:
+
+The western gate is closed.
+
+Requirement:
+
+Defeat a southern boss.
+
+Reward:
+
+Ancient Key.
+
+The key unlocks the western path.
+
+Create a generic:
+
+ProgressionRequirement
+
+system.
+
+It should support future requirements such as:
+
+- kill boss
+- defeat miniboss
+- obtain item
+- unlock spell
+- unlock pet
+- reach level
+- complete stage
+- complete multiple stages
+- possess enough gold
+- possess specific rare item
+
+Do not hardcode only the bridge/key examples.
+
+==================================================
+7. STAGE ARCHITECTURE
+==================================================
+
+Stages must be modular and support different gameplay styles.
+
+Create a base Stage class/interface.
+
+Each stage should have:
+
+- id
+- name
+- description
+- type
+- difficulty
+- waves
+- enemies
+- rewards
+- minibosses
+- boss
+- level
+- player rules
+- environment
+- completion conditions
+
+The StageManager should load stages through a StageFactory.
+
+Do NOT use large if/else blocks such as:
+
+if(type === "open") ...
+else if(type === "tower") ...
+else if(type === "future") ...
+
+Use a registry/factory/plugin-style architecture so new stage types can be added without modifying the core StageManager.
+
+==================================================
+8. INITIAL STAGE TYPES
+==================================================
+
+Implement architecture for at least:
+
+OPEN_FIELD
+
+Player can freely move around the stage.
+
+Enemies spawn around the playable area.
+
+Enemies approach and attack the player.
+
+DEFENSE
+
+Player is stationary.
+
+Enemies spawn from different directions and move toward the player.
+
+This should behave somewhat like tower defense.
+
+Create the base interfaces necessary for future stage types such as:
+
+- escort
+- survival
+- boss arena
+- timed challenge
+- puzzle
+- dungeon
+- moving stage
+- objective-based stage
+
+These do not need to be implemented now.
+
+==================================================
+9. STAGE LEVEL SYSTEM
+==================================================
+
+Every stage has its own temporary level.
+
+When entering a stage:
+
+level = 0
+experience = 0
+
+The level resets when entering a new stage.
+
+Levels do NOT carry between stages.
+
+Enemies award EXP.
+
+When enough EXP is collected:
+
+level increases.
+
+Do not confuse stage level with permanent progression.
+
+The permanent progression system must remain separate.
+
+==================================================
+10. LEVEL-UP CARD SYSTEM
+==================================================
+
+Whenever the player levels up:
+
+Pause gameplay.
+
+Generate 3 random cards.
+
+The player must select exactly one.
+
+Cards can provide:
+
+- stat upgrades
+- new spells
+- spell modifications
+- elemental bonuses
+- health bonuses
+- movement bonuses
+- attack bonuses
+- attack speed
+- cooldown reduction
+- lifesteal
+- regeneration
+- temporary stage-specific effects
+
+The card system must be data-driven.
+
+Create a Card interface/data model:
+
+{
+    id,
+    name,
+    description,
+    rarity,
+    type,
+    effect,
+    prerequisites
+}
+
+Do not hardcode card choices into the UI.
+
+==================================================
+11. SPELL SYSTEM
+==================================================
+
+At the beginning of every stage:
+
+The player is presented with 3 available spell cards.
+
+The player chooses 1.
+
+The selected spell becomes part of the player's current stage spell loadout.
+
+Spells automatically fire when a valid enemy enters their targeting range.
+
+The player does not manually cast the basic spells.
+
+The architecture must support:
+
+- single-target spells
+- area-of-effect spells
+- projectiles
+- instant damage
+- damage-over-time
+- chain attacks
+- piercing
+- buffs
+- debuffs
+- future spell mechanics
+
+Every spell should have configurable:
+
+- base damage
+- cooldown
+- range
+- targeting mode
+- projectile speed
+- area radius
+- elemental damage
+- elemental type
+- target count
+
+==================================================
+12. ELEMENTAL SYSTEM
+==================================================
+
+Initial elements:
+
+- FIRE
+- THUNDER
+- WIND
+
+Design the ElementSystem so additional elements can be added later without rewriting combat logic.
+
+Spells can have:
+
+baseDamage
+
++
+
+elementalDamage
+
+Example:
+
+Fireball:
+
+base damage = 20
+fire damage = 15
+
+Total damage before defenses:
+
+35
+
+Do not hardcode elemental logic inside individual spells.
+
+Use a centralized ElementSystem.
+
+==================================================
+13. ELEMENTAL DEFENSE
+==================================================
+
+Enemies have:
+
+- health
+- damage
+- defense
+- elemental resistances
+- elemental weaknesses
+
+Enemies can resist elements but normal enemies should never be completely immune.
+
+Bosses and minibosses may have elemental immunity.
+
+The architecture must distinguish:
+
+RESISTANCE
+
+from
+
+IMMUNITY
+
+Example:
+
+Fire resistance = 40%
+
+Fire damage:
+
+finalFireDamage =
+baseFireDamage × (1 - 0.40)
+
+For immunity:
+
+finalFireDamage = 0
+
+Make this configurable per enemy.
+
+Support:
+
+- physical defense
+- fire resistance
+- thunder resistance
+- wind resistance
+- future elements
+
+Do not hardcode element-specific calculations into the Enemy class.
+
+==================================================
+14. ENEMIES
+==================================================
+
+Initial enemy types:
+
+- Skeleton
+- Goblin
+- Bat
+- Snake
+
+Enemies can be:
+
+- melee
+- ranged
+- fast
+- slow
+- high health
+- low health
+- defensive
+- specialized
+
+Every enemy should have configurable:
+
+- HP
+- damage
+- movement speed
+- attack range
+- attack cooldown
+- defense
+- elemental resistances
+- elemental weaknesses
+- EXP reward
+- gold drop chance
+- gold reward
+- rare item drop chance
+
+Use EnemyFactory and EnemyRegistry.
+
+Adding a new enemy should primarily require adding configuration/data rather than modifying core systems.
+
+==================================================
+15. BOSSES AND MINIBOSSES
+==================================================
+
+Bosses and minibosses should inherit from appropriate base enemy classes.
+
+They should support:
+
+- high HP
+- unique attacks
+- phases
+- elemental resistances
+- elemental immunity
+- special mechanics
+- unique rewards
+- progression items
+
+IMPORTANT:
+
+Boss behavior MUST use a finite state machine.
+
+Create:
+
+BossStateMachine
+
+with states such as:
+
+IDLE
+CHASE
+ATTACK
+SPECIAL_ATTACK
+PHASE_TRANSITION
+STUNNED
+DEAD
+
+The architecture should support:
+
+enter()
+update(deltaTime)
+exit()
+
+for each state.
+
+Bosses should be able to transition between states based on:
+
+- player distance
+- health percentage
+- cooldowns
+- phase
+- timers
+- external events
+
+Do not implement every boss now.
+
+Create one simple placeholder boss demonstrating the FSM architecture.
+
+==================================================
+16. GOLD SYSTEM
+==================================================
+
+Introduce Gold as a run-independent currency.
+
+Enemies have a configurable chance to drop Gold.
+
+Example:
+
+Skeleton:
+10% chance
+
+Goblin:
+15% chance
+
+Bat:
+12% chance
+
+Elite:
+30% chance
+
+Boss:
+100% chance
+
+Gold is used for:
+
+- unlocking spells
+- upgrading spells
+- permanent upgrades
+
+Gold should persist using localStorage.
+
+Keep Gold separate from:
+
+- EXP
+- stage level
+- Souls
+- future boss items
+
+Use a centralized Currency/Economy system so more currencies can be added later.
+
+==================================================
+17. PERMANENT UPGRADE TREE
+==================================================
+
+Create a large permanent upgrade tree using Gold.
+
+The tree should be data-driven.
+
+When the player purchases an upgrade:
+
+- Gold is deducted.
+- The node becomes unlocked.
+- New dependent nodes become available.
+- The upgrade persists between runs.
+- The effect is applied to future runs.
+
+Initial upgrade categories should support:
+
+- maximum health
+- gold drop chance
+- spell slots
+- global spell cooldown reduction
+- elemental upgrades
+- pet slot unlock
+- additional pet slots
+- faster EXP/level progression
+- movement speed
+- attack damage
+- attack speed
+- lifesteal
+- regeneration
+- defense
+- spell combo unlocks
+
+Do NOT assume spell combos are finalized.
+
+Design the upgrade architecture so "spell combos" can be added later without rewriting the upgrade system.
+
+The UI should visually resemble a large branching skill tree.
+
+A node can unlock additional child nodes.
+
+==================================================
+18. SPELL SHOP
+==================================================
+
+After completing the first 3 stages:
+
+Unlock the Spell Shop.
+
+The shop allows the player to:
+
+- purchase new spells
+- upgrade existing spells
+
+Initially:
+
+Gold is the only required currency.
+
+However, design the system for future requirements.
+
+Future spell unlock requirements may include:
+
+- Gold
+- miniboss-specific item
+- major boss-specific item
+- rare enemy drop
+- special quest item
+
+Future spell upgrade requirements may use the same system.
+
+Therefore, DO NOT implement:
+
+cost = number
+
+as the only possible cost representation.
+
+Instead support something like:
+
+costs: [
+    { type: "gold", amount: 100 },
+    { type: "item", itemId: "boss_crystal", amount: 1 }
+]
+
+This allows additional resource types later.
+
+Spells available inside stages must ONLY be spells that the player has unlocked.
+
+==================================================
+19. SPELL SLOTS
+==================================================
+
+The player has a limited number of spell slots.
+
+The permanent upgrade tree can increase the number of spell slots.
+
+The spell system must distinguish between:
+
+UNLOCKED SPELLS
+
+and
+
+EQUIPPED SPELLS
+
+and
+
+AVAILABLE STAGE SPELLS
+
+A player may own many spells but only equip/use a limited number depending on progression.
+
+Keep these concepts separate.
+
+==================================================
+20. PET SYSTEM
+==================================================
+
+After several stages, introduce an NPC:
+
+Animal Caretaker.
+
+The caretaker unlocks the Pet system.
+
+Pets have elemental affiliations.
+
+Initial examples:
+
+Fire Pet
+Thunder Pet
+Wind Pet
+
+A pet increases elemental damage of the corresponding element.
+
+Example:
+
+Fire Pet:
+
++15% Fire Damage
+
+Pets should be data-driven and support future effects beyond elemental bonuses.
+
+The permanent upgrade tree should be able to:
+
+- unlock the first pet slot
+- increase the number of pet slots
+
+Do not hardcode a maximum number of pet slots.
+
+==================================================
+21. STAGE DIFFICULTY
+==================================================
+
+The game is intentionally difficult.
+
+The player should expect to:
+
+- die
+- retry stages
+- experiment with builds
+- grind gold
+- unlock permanent upgrades
+- discover effective spell combinations
+- learn enemy weaknesses
+
+However, difficulty scaling should be data-driven.
+
+Support:
+
+- enemy HP scaling
+- enemy damage scaling
+- spawn rate
+- enemy count
+- enemy variety
+- wave count
+- minibosses
+- bosses
+
+Do not hardcode difficulty scaling inside individual enemies.
+
+==================================================
+22. RUN VS PERMANENT PROGRESSION
+==================================================
+
+Clearly separate temporary stage progression from permanent progression.
+
+TEMPORARY:
+
+- current stage level
+- current EXP
+- selected level-up cards
+- current stage spells
+- temporary spell modifications
+- temporary buffs
+- current enemies
+- current stage state
+
+PERSISTENT:
+
+- unlocked stages
+- completed stages
+- Gold
+- unlocked spells
+- spell upgrades
+- permanent upgrade tree
+- unlocked pets
+- pet slots
+- progression items
+- boss items
+- rare items
+- story progression
+
+The SaveManager should be responsible for persistent data.
+
+==================================================
+23. SAVE SYSTEM
+==================================================
+
+Use localStorage.
+
+Create a versioned save structure.
+
+Example:
+
+{
+    version: 1,
+    currencies: {},
+    completedStages: [],
+    unlockedStages: [],
+    unlockedSpells: [],
+    spellUpgrades: {},
+    permanentUpgrades: [],
+    pets: [],
+    petSlots: 0,
+    progressionItems: [],
+    settings: {}
+}
+
+Do not store temporary combat objects.
+
+Create methods:
+
+save()
+load()
+reset()
+hasSave()
+migrate()
+
+Design the system so save-data versions can be migrated later.
+
+==================================================
+24. GAME LOOP
+==================================================
+
+Use:
+
+requestAnimationFrame
+
+with a fixed timestep for gameplay updates.
+
+Separate:
+
+update()
+
+from:
+
+render()
+
+The architecture should support:
+
+Input
+   ↓
+Game State
+   ↓
+Stage
+   ↓
+Entities / Systems
+   ↓
+Rendering
+
+Avoid putting gameplay logic inside rendering code.
+
+==================================================
+25. EVENT BUS
+==================================================
+
+Create an EventBus for decoupled communication.
+
+Example events:
+
+ENEMY_KILLED
+PLAYER_DAMAGED
+PLAYER_DIED
+GOLD_DROPPED
+GOLD_COLLECTED
+EXP_GAINED
+LEVEL_UP
+CARD_SELECTED
+SPELL_UNLOCKED
+SPELL_UPGRADED
+BOSS_DEFEATED
+MINIBOSS_DEFEATED
+STAGE_COMPLETED
+STAGE_FAILED
+ITEM_ACQUIRED
+PATH_UNLOCKED
+PET_UNLOCKED
+
+Systems should communicate through events where appropriate instead of creating excessive direct dependencies.
+
+==================================================
+26. DATA-DRIVEN CONFIGURATION
+==================================================
+
+Most gameplay values should live in configuration files.
+
+Do NOT scatter values like:
+
+enemy.hp = 100
+
+throughout gameplay code.
+
+Instead:
+
+enemyConfig.js
+
+spellConfig.js
+
+stageConfig.js
+
+upgradeConfig.js
+
+petConfig.js
+
+bossConfig.js
+
+etc.
+
+Adding a new spell should ideally involve adding a new configuration entry and, only when necessary, a specialized behavior class.
+
+==================================================
+27. RENDERING
+==================================================
+
+For now, use placeholder graphics made from Canvas shapes.
+
+Do not require external assets.
+
+Create clear visual placeholders for:
+
+- player doll
+- enemies
+- spells
+- projectiles
+- map nodes
+- tower/defense locations
+- bosses
+- pets
+- effects
+
+The rendering architecture must make it possible to replace placeholder shapes with sprites later without rewriting gameplay systems.
+
+==================================================
+28. UI
+==================================================
+
+Create placeholder but functional UI for:
+
+MAIN MENU
+- Play
+- Settings
+
+INTRO
+- Story text
+- Continue
+
+WORLD MAP
+- stages
+- locked/unlocked paths
+- completed stages
+- progression gates
+
+STAGE
+- HP
+- Gold
+- EXP
+- Level
+- equipped spells
+- current wave
+- pause
+
+LEVEL UP
+- 3 cards
+- select one
+
+SPELL SHOP
+- available spells
+- unlocked spells
+- spell upgrade options
+- Gold costs
+
+UPGRADE TREE
+- upgrade nodes
+- connections
+- costs
+- locked/unlocked/purchased states
+
+SETTINGS
+- volume placeholder
+- controls placeholder
+- reset save option
+
+==================================================
+29. STAGE COMPLETION
+==================================================
+
+A stage is completed when its configured completion condition is satisfied.
+
+Initially support:
+
+- survive all waves
+- defeat miniboss
+- defeat boss
+- reach objective
+
+Do not hardcode "kill all enemies" as the only possible completion condition.
+
+After completion:
+
+- mark stage completed
+- unlock configured next stages
+- grant configured rewards
+- return to map
+
+If the stage contains a progression item, add it to persistent progression.
+
+==================================================
+30. STAGE DEATH
+==================================================
+
+When the player dies:
+
+- stop the current stage
+- preserve permanent progression
+- preserve Gold
+- preserve unlocked spells
+- preserve permanent upgrades
+- preserve pets
+- reset temporary stage level/progression
+
+Show:
+
+DEFEATED
+
+with:
+
+- Retry
+- Return to Map
+
+Do not delete permanent progress.
+
+==================================================
+31. INITIAL 15-STAGE MAP DESIGN
+==================================================
+
+Create placeholder data for 15 stages.
+
+Do not make every stage identical.
+
+Use a rough progression like:
+
+Stage 1:
+Forgotten Hut
+
+Stage 2:
+Whispering Fields
+
+Stage 3:
+Old Graveyard
+
+Stage 4:
+Goblin Woods
+
+Stage 5:
+Broken Bridge
+
+Stage 6:
+Rotten Marsh
+
+Stage 7:
+Eastern Ruins
+
+Stage 8:
+Cursed Fortress
+
+Stage 9:
+Sunken Village
+
+Stage 10:
+Ancient Gate
+
+Stage 11:
+Deadlands
+
+Stage 12:
+Soul Wastes
+
+Stage 13:
+Demon Pass
+
+Stage 14:
+Lava Foothills
+
+Stage 15:
+Lava Mountains / Final Boss
+
+These are placeholders and should be represented through configuration.
+
+Create at least one fork in the map.
+
+Create at least one progression requirement where completing a stage provides an item required to unlock another path.
+
+Do not make the entire map strictly linear.
+
+==================================================
+32. FIRST IMPLEMENTATION SCOPE
+==================================================
+
+For THIS implementation, prioritize architecture over content.
+
+Fully implement enough functionality to prove the architecture works:
+
+1. Main menu
+2. Play button
+3. Intro story
+4. World map
+5. One playable placeholder stage
+6. Player movement
+7. Basic enemy spawning
+8. Basic enemy/player interaction
+9. Basic EXP system
+10. Level-up with 3 placeholder cards
+11. Basic spell auto-fire
+12. Gold currency
+13. Persistent save system
+14. Upgrade-tree UI with several functional example nodes
+15. Stage completion
+16. Stage unlocking
+17. Basic boss using the FSM architecture
+
+Everything else should have clean boilerplate structures and TODO comments.
+
+==================================================
+33. CODE QUALITY REQUIREMENTS
+==================================================
+
+Prioritize:
+
+- modularity
+- low coupling
+- high cohesion
+- clear responsibilities
+- dependency injection where useful
+- data-driven design
+- reusable systems
+- extensibility
+- readable naming
+- comments explaining architecture
+- minimal global state
+
+Avoid:
+
+- giant files
+- giant Game class
+- giant switch statements
+- deeply nested conditionals
+- duplicated logic
+- hardcoded stage progression
+- hardcoded enemy behavior
+- hardcoded upgrade behavior
+- hardcoded spell behavior
+- direct localStorage calls scattered throughout the project
+
+==================================================
+34. TODO COMMENTS
+==================================================
+
+Where functionality is intentionally not implemented, add useful TODO comments.
+
+BAD:
+
+// TODO: implement boss
+
+GOOD:
+
+// TODO: Add boss phase transitions based on health thresholds.
+// Phase 1 -> Phase 2 at 70% HP.
+// Phase 2 -> Phase 3 at 30% HP.
+// The BossStateMachine should trigger the transition,
+// while the Boss entity remains responsible only for its data.
+
+Comments should explain WHERE future logic belongs and WHAT responsibility it should have.
+
+==================================================
+35. FINAL REQUIREMENT
+==================================================
+
+The final result should feel like the foundation of a real game project rather than a single-file prototype.
+
+The architecture must allow future development to happen incrementally.
+
+For example, I should be able to later ask:
+
+"Add a poison element."
+
+"Add a new stage type."
+
+"Add a new boss with 4 FSM phases."
+
+"Add spell fusion."
+
+"Add a new pet."
+
+"Add a new permanent upgrade."
+
+"Add a boss-specific crafting material."
+
+"Add a new progression gate."
+
+without needing to rewrite the core game architecture.
+
+Return the complete project structure and boilerplate implementation.
+
+After the code, provide a short architecture explanation showing:
+
+- how the game states communicate
+- how stages are created
+- how entities and systems interact
+- how spells work
+- how the upgrade tree works
+- how boss FSMs work
+- how persistent progression is saved
+- how a future developer should add a new stage, enemy, spell, boss, or upgrade
+```

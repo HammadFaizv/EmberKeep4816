@@ -1,0 +1,23 @@
+/* Spell shop and pet caretaker screens. */
+.shop { width: 1040px; height: 620px; display: flex; flex-direction: column; }
+.shop-owned { margin-bottom: 12px; }
+.shop-columns { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; min-height: 0; }
+.shop-columns section { display: flex; flex-direction: column; min-height: 0; }
+.shop-columns h3 { color: var(--accent); }
+.shop-list { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; padding-right: 6px; }
+
+.shop-item {
+    border: 1px solid #3a2d24;
+    border-left: 4px solid var(--element, #777);
+    border-radius: 8px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.02);
+}
+.shop-item-disabled { opacity: 0.75; }
+.shop-item-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.shop-item-head strong { flex: 1; }
+.shop-item-foot { display: flex; justify-content: space-between; align-items: center; }
+.element-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--element, #777); }
+
+.pets { width: 640px; height: auto; max-height: 620px; }
+.pet-list { overflow: visible; }

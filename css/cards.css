@@ -1,0 +1,59 @@
+/* Card selection (level-up cards and stage-start spell choice). */
+.card-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(20, 10, 10, 0.75), rgba(0, 0, 0, 0.9));
+    animation: fade-in 0.2s ease-out;
+}
+.card-title { font-size: 44px; color: #ffd9a0; text-shadow: 0 0 20px rgba(255, 150, 60, 0.5); }
+.card-subtitle { color: var(--muted); max-width: 720px; text-align: center; }
+.card-row { display: flex; gap: 26px; margin: 24px 0 16px; }
+.card-hint { color: var(--muted); font-size: 13px; }
+
+.card {
+    position: relative;
+    width: 230px;
+    height: 330px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 18px;
+    font-family: var(--font);
+    color: var(--text);
+    text-align: center;
+    background: linear-gradient(170deg, #2a1f1c, #151012);
+    border: 2px solid var(--rarity);
+    border-radius: 14px;
+    box-shadow: 0 0 20px color-mix(in srgb, var(--rarity) 30%, transparent);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    animation: card-in 0.35s ease-out backwards;
+}
+.card:nth-child(2) { animation-delay: 0.06s; }
+.card:nth-child(3) { animation-delay: 0.12s; }
+.card:hover { transform: translateY(-10px) scale(1.03); box-shadow: 0 0 34px color-mix(in srgb, var(--rarity) 60%, transparent); }
+.card-key { position: absolute; top: 8px; left: 12px; font-size: 12px; color: var(--muted); }
+.card-rarity { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--rarity); }
+.card-sigil {
+    width: 76px;
+    height: 76px;
+    margin: 6px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    border-radius: 50%;
+    color: var(--element);
+    border: 2px solid var(--element);
+    background: radial-gradient(circle, color-mix(in srgb, var(--element) 25%, transparent), transparent 70%);
+}
+.card-name { font-size: 20px; color: #ffe7c0; }
+.card-desc { font-size: 15px; color: #d8c8b0; line-height: 1.4; }
+.card-meta { margin-top: auto; font-size: 11px; color: var(--muted); }
+.card-legendary { background: linear-gradient(170deg, #3a2a14, #1a120a); }
+@keyframes card-in { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }
